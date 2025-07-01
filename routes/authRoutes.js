@@ -22,8 +22,8 @@ router.post('/verify-otp', authController.verifyOtp);
 //Resend OTP Route
 router.post('/resend-otp', authController.resendOtp);
 
-//Change Password Route
-// router.post('/change-password', authController.changePassword);
+//Set New Password Route
+router.post('/set-new-Password', authController.setNewPassword);
 
 
 
