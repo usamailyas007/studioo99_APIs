@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
-const secret_Key = "sjjsjsjd;owqknnqkwjcnnwkcncn";
+const secret_Key = "hshdhebbjwhfjbwjhjchchjcedjniwhfnwcjlialuidhi";
 
 //Signup API===========================
 exports.signup = async (req, res) => {
