@@ -1,25 +1,19 @@
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
-const secret_Key = "bjkjhshdhhddhdhhdhdhhdhhd";
-
 
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, channelName, role } = req.body;
+    const { name, email, password, channelName, role } = req.body; 
 
     if (!['Viewer', 'Content Creator'].includes(role)) {
       return res.status(400).json({ error: "Role must be either 'Viewer' or 'Content Creator'" });
     }
-
     if (role === 'Content Creator' && !channelName) {
       return res.status(400).json({ error: "Channel name is required for Content Creators" });
     }
-
     if (role === 'Viewer' && channelName) {
       return res.status(400).json({ error: "Viewers should not have a channel name" });
     }
-
     if (!name || !email || !password || !role) {
       return res.status(400).json({ error: 'Please provide all required fields' });
     }
@@ -45,23 +39,13 @@ exports.signup = async (req, res) => {
 
     await newUser.save();
 
-    // Generate JWT Token
-    const token = jwt.sign(
-      { userId: newUser._id, role: newUser.role },
-      secret_Key,
-      { expiresIn: '7d' } // Token expires in 7 days
-    );
-
-    res.status(201).json({
-      message: 'User registered successfully',
-      token, // return the JWT token
-      user: { ...newUser._doc, password: undefined }
-    });
+    res.status(200).json({ message: 'User registered successfully', user: { ...newUser._doc, password: undefined } });
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('Signup error:', error); 
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
 
 //Add region and country
 exports.updateProfile = async (req, res) => {
