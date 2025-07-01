@@ -105,9 +105,9 @@ exports.login = async (req, res) => {
 //AddRegion API===========================
 exports.addRegion = async (req, res) => {
   try {
-    const { region, country } = req.body;
-    const userId = req.user._id; 
+    const { userId,region, country } = req.body;
 
+  
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { region, country },
@@ -123,5 +123,4 @@ exports.addRegion = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
-
 
