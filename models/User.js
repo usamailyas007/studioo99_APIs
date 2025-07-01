@@ -9,6 +9,27 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  password: {
+    type: String,
+    required: true,
+  },
+  channelName: {
+    type: String,
+    default: null,
+  },
+  region: {
+    type: String,
+    default: null,
+  },
+  country: {
+    type: String,
+    default: null,
+  },
+  role: {
+    type: String,
+    required: true,
+    enum: ['Viewer', 'Content Creator'],
+  },
 });
 
 module.exports = mongoose.model('User', userSchema);
