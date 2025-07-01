@@ -1,29 +1,28 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const secret_Key = process.env.SECRET_KEY;
 
 const authenticateJWT = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  if (authHeader) {
-    const token = authHeader.split(' ')[1];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ status: 'failed', message: 'Unauthorized: No token provided' });
+  }
 
-    try {
-      const decoded = jwt.verify(token, secret_Key);
-      const user = await User.findById(decoded.userId);
+  const token = authHeader.split(' ')[1];
 
-      if (!user) {
-        return res.status(401).json({ status: 'failed', message: 'User not found' });
-      }
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY); 
+    const user = await User.findByPk(decoded.id); 
 
-      req.user = user;
-      next();
-    } catch (error) {
-      console.error(`Error authenticating JWT: ${error.message}`);
-      res.status(401).json({ status: 'failed', message: 'Unauthorized' });
+    if (!user) {
+      return res.status(401).json({ status: 'failed', message: 'Unauthorized: User not found' });
     }
-  } else {
-    res.status(401).json({ status: 'failed', message: 'No token provided' });
+
+    req.user = user; 
+    next();
+  } catch (error) {
+    console.error(`Error authenticating JWT: ${error.message}`);
+    return res.status(401).json({ status: 'failed', message: 'Unauthorized: Invalid token' });
   }
 };
 
