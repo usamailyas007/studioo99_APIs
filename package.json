@@ -1,0 +1,14 @@
+{
+  "name": "minimal-node-mongo-vercel",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.21.2",
+    "mongoose": "^8.0.0",
+    "nodemon": "^3.1.10"
+  }
+}
