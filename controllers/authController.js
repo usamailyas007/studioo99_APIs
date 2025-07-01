@@ -1,27 +1,12 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
-const secret_Key = "hshdhebbjwhfjbwjhjchchjcedjniwhfnwcjlialuidhi";
-// const { transporter } = require('../services/services'); 
+const secret_Key = process.env.SECRET_KEY;
 const { sendOtpMail } = require('../services/services'); 
 
 require('dotenv').config();
 
 
-
-// const transporter = nodemailer.createTransport({
-  
-//   service: 'gmail',
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASS, 
-//   },
-// });
-
-
-
-
-//Signup API===========================
 exports.signup = async (req, res) => {
   try {
     const { name, email, password, channelName, role } = req.body;
@@ -142,6 +127,8 @@ exports.addRegion = async (req, res) => {
   }
 };
 
+//send Otp API===========================
+
 exports.sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -167,7 +154,7 @@ exports.sendOtp = async (req, res) => {
 };
 
 
-// Verify OTP
+// Verify OTP============================
 exports.verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -201,3 +188,29 @@ exports.verifyOtp = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
+// Resend OTP============================
+exports.resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const otp = Math.floor(10000 + Math.random() * 90000).toString();
+    const otpExpiry = Date.now() + 10 * 60 * 1000; 
+
+    user.otp = otp;
+    user.otpExpiry = otpExpiry;
+    await user.save();
+
+    await sendOtpMail(email, otp);
+
+    res.status(200).json({ message: 'OTP resent to email' });
+  } catch (error) {
+    console.error('Resend OTP error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
