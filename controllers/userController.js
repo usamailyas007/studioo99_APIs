@@ -2,7 +2,6 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
 exports.signup = async (req, res) => {
-    console.log('Signup endpoint hit!', req.body); 
   try {
     const { name, email, password, channelName, role } = req.body; 
 
@@ -15,8 +14,14 @@ exports.signup = async (req, res) => {
     if (role === 'Viewer' && channelName) {
       return res.status(400).json({ error: "Viewers should not have a channel name" });
     }
-    if (!name || !phone || !password || !role) {
+    if (!name || !email || !password || !role) {
       return res.status(400).json({ error: 'Please provide all required fields' });
+    }
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "Email already registered" });
     }
 
     // Hash the password
@@ -30,17 +35,17 @@ exports.signup = async (req, res) => {
       password: hashedPassword,
       channelName: role === 'Content Creator' ? channelName : undefined,
       role,
-    
     });
 
     await newUser.save();
 
-    res.status(201).json({ message: 'User registered successfully', user: { ...newUser._doc, password: undefined } });
+    res.status(200).json({ message: 'User registered successfully', user: { ...newUser._doc, password: undefined } });
   } catch (error) {
-      console.error('Signup error:', error); 
+    console.error('Signup error:', error); 
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
 
 //Add region and country
 exports.updateProfile = async (req, res) => {
