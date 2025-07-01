@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
     required: true,
     enum: ['Viewer', 'Content Creator'],
   },
+  otp: { type: String },
+otpExpiry: { type: Date },
+isVerified: { type: Boolean, default: false }
+
 });
 
 module.exports = mongoose.model('User', userSchema);

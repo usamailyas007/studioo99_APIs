@@ -2,6 +2,19 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const secret_Key = "hshdhebbjwhfjbwjhjchchjcedjniwhfnwcjlialuidhi";
+const nodemailer = require('nodemailer');
+
+// Transport setup (fill with your service/auth details)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS, 
+  },
+});
+
+
+
 
 //Signup API===========================
 exports.signup = async (req, res) => {
@@ -124,3 +137,70 @@ exports.addRegion = async (req, res) => {
   }
 };
 
+exports.sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Generate OTP
+    const otp = Math.floor(10000 + Math.random() * 90000).toString();
+    const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Save OTP and expiry to user
+    user.otp = otp;
+    user.otpExpiry = otpExpiry;
+    await user.save();
+
+    // Send OTP email
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Your Verification OTP',
+      text: `Your OTP is: ${otp}`,
+    });
+
+    res.status(200).json({ message: 'OTP sent to email' });
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+exports.verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Email and OTP are required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (!user.otp || !user.otpExpiry) {
+      return res.status(400).json({ error: 'OTP not requested. Please request an OTP.' });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    if (Date.now() > user.otpExpiry) {
+      return res.status(400).json({ error: 'OTP has expired' });
+    }
+
+    // Optional: mark user as verified (e.g., user.isVerified = true)
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+    user.isVerified = true;
+    await user.save();
+
+    res.status(200).json({ message: 'Email verified successfully' });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};

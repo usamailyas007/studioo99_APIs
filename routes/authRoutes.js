@@ -13,6 +13,9 @@ router.post('/login', authController.login);
 //Add Region Route
 router.post('/addRegion', authMiddleware, authController.addRegion);
 
+router.post('/send-otp', authController.sendOtp);
+router.post('/verify-otp', authController.verifyOtp);
+
 // router.get('/users', userController.getUsers);
 
 module.exports = router;
