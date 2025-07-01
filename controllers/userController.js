@@ -2,6 +2,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
 exports.signup = async (req, res) => {
+    console.log('Signup endpoint hit!', req.body); 
   try {
     const { name, phone, password, channelName, region, country, role } = req.body;
 
@@ -38,6 +39,7 @@ exports.signup = async (req, res) => {
 
     res.status(201).json({ message: 'User registered successfully', user: { ...newUser._doc, password: undefined } });
   } catch (error) {
+      console.error('Signup error:', error); 
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
