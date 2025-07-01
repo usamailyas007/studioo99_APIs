@@ -4,9 +4,8 @@ const bcrypt = require('bcryptjs');
 exports.signup = async (req, res) => {
     console.log('Signup endpoint hit!', req.body); 
   try {
-    const { name, phone, password, channelName, region, country, role } = req.body;
+    const { name, email, password, channelName, role } = req.body; 
 
-    // Role-based validation
     if (!['Viewer', 'Content Creator'].includes(role)) {
       return res.status(400).json({ error: "Role must be either 'Viewer' or 'Content Creator'" });
     }
@@ -27,12 +26,11 @@ exports.signup = async (req, res) => {
     // Create user
     const newUser = new User({
       name,
-      phone,
+      email,
       password: hashedPassword,
       channelName: role === 'Content Creator' ? channelName : undefined,
-      region,
-      country,
       role,
+    
     });
 
     await newUser.save();
@@ -43,3 +41,28 @@ exports.signup = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
+//Add region and country
+exports.updateProfile = async (req, res) => {
+  try {
+    // const userId = req.body.id; 
+    const { userId,region, country } = req.body;
+
+    // Validate inputs if needed
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { region, country },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({ message: "Profile updated", user: updatedUser });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
