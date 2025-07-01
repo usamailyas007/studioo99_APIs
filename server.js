@@ -12,6 +12,8 @@ connectDB();
 
 
 
+
+
 // Route registration
 app.use('/auth/api', authRoutes);
 app.use('/api', userRoutes);
