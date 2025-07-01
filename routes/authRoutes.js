@@ -11,7 +11,7 @@ router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 
 //Add Region Route
-router.post('/addRegion',authMiddleware, authController.addRegion);
+router.post('/addRegion', authController.addRegion);
 
 // router.get('/users', userController.getUsers);
 
