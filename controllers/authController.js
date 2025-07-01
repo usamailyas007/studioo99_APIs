@@ -51,8 +51,7 @@ const bcrypt = require('bcryptjs');
 
 //Add region and country
 
-const secret_Key = process.env.SECRET_KEY;
-
+const secret_Key = "sjjsjsjd;owqknnqkwjcnnwkcncn";
 
 exports.signup = async (req, res) => {
   try {
