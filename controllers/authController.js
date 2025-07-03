@@ -269,3 +269,30 @@ exports.changePasswordById = async (req, res) => {
   }
 };
 
+//Delete user by ID
+exports.deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { activeStatus: false },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User Deleted successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Soft delete error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+

@@ -28,6 +28,8 @@ router.post('/set-new-Password', authController.setNewPassword);
 //Set Password by Id Route
 router.post('/change-password-by-id', authMiddleware, authController.changePasswordById);
 
+//Delete user by ID
+router.post('/deleteUser', authMiddleware, authController.deleteUser);
 
 
 
