@@ -74,19 +74,20 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: "Please provide both email and password" });
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ error: "Invalid email or password" });
     }
 
-    // Compare password
+    if (user.activeStatus === false) {
+      return res.status(403).json({ error: "This account has been deleted." });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid email or password" });
     }
 
-    // Generate JWT Token
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       secret_Key,
