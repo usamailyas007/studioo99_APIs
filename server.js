@@ -1,6 +1,6 @@
 const express = require('express');
 const connectDB = require('./config/db');
-const userRoutes = require('./routes/userRoutes');
+const appRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 
 require('dotenv').config();
@@ -16,7 +16,7 @@ connectDB();
 
 // Route registration
 app.use('/auth/api', authRoutes);
-app.use('/api', userRoutes);
+app.use('/api', appRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is working!');

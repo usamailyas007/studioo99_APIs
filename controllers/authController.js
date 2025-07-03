@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const secret_Key = process.env.SECRET_KEY;
-const { sendOtpMail } = require('../services/services'); 
+const { sendOtpMail } = require('../services/otpServices'); 
 
 require('dotenv').config();
 
