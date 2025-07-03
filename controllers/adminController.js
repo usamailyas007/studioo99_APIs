@@ -1,5 +1,7 @@
 const Policy = require('../models/policy');
 
+
+//post Privacy SSL Term======================
 exports.upsertPolicy = async (req, res) => {
   try {
     const { type, content } = req.body;
@@ -10,7 +12,6 @@ exports.upsertPolicy = async (req, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    // Find if the policy of this type exists, else create new (upsert)
     const updatedPolicy = await Policy.findOneAndUpdate(
       { type },
       { content, updatedAt: new Date() },
@@ -20,6 +21,17 @@ exports.upsertPolicy = async (req, res) => {
     res.json({ message: `Policy (${type}) saved successfully`, policy: updatedPolicy });
   } catch (error) {
     console.error('Upsert Policy error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+//Get Privacy SSL Term======================
+exports.getAllPolicies = async (req, res) => {
+  try {
+    const policies = await Policy.find({});
+    res.json({ policies });
+  } catch (error) {
+    console.error('Get all policies error:', error);
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };

@@ -5,5 +5,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 
 router.post('/admin/policy',  adminController.upsertPolicy);
+router.get('/admin/getAllPolicies',  adminController.getAllPolicies);
+
 
 module.exports = router;
