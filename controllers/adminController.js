@@ -1,4 +1,6 @@
 const Policy = require('../models/policy');
+const AppSettings = require('../models/AppSettings');
+
 
 
 //post Privacy SSL Term======================
@@ -32,6 +34,50 @@ exports.getAllPolicies = async (req, res) => {
     res.json({ policies });
   } catch (error) {
     console.error('Get all policies error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+//App Settings=========================== 
+exports.upsertAppSettings = async (req, res) => {
+  try {
+    const {
+      appName,
+      stripeKey,
+      videoCategories,
+      subscriptionPackages
+    } = req.body;
+
+    const updatedSettings = await AppSettings.findOneAndUpdate(
+      {},
+      {
+        appName,
+        stripeKey,
+        videoCategories,
+        subscriptionPackages,
+        updatedAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({ message: 'App settings updated', appSettings: updatedSettings });
+  } catch (error) {
+    console.error('App settings update error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+
+//Get App Settings=========================== 
+exports.getAppSettings = async (req, res) => {
+  try {
+    const settings = await AppSettings.findOne({});
+    if (!settings) {
+      return res.status(404).json({ error: 'App settings not found' });
+    }
+    res.json({ appSettings: settings });
+  } catch (error) {
+    console.error('Get app settings error:', error);
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };

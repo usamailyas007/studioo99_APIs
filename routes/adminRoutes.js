@@ -4,8 +4,19 @@ const adminController = require('../controllers/adminController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 
+//Post Policy Route
 router.post('/admin/policy',  adminController.upsertPolicy);
-router.get('/admin/getAllPolicies',  adminController.getAllPolicies);
+
+//Get Policy Route
+router.get('/user/getAllPolicies',  adminController.getAllPolicies);
+
+//Post App Setting route
+router.post('/admin/appSetting',  adminController.upsertAppSettings);
+
+
+//Get Policy Route
+router.get('/user/getAppSettings',  adminController.getAppSettings);
+
 
 
 module.exports = router;
