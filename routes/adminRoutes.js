@@ -24,5 +24,9 @@ router.get('/user/getContentCreator',  adminController.getAllContentCreators);
 //Get All Viewers 
 router.get('/user/getViewers',  adminController.getAllViewers);
 
+//Update Verifciation Status 
+router.get('/user/updateVerificationStatus',  adminController.updateVerificationStatus);
+
+
 
 module.exports = router;

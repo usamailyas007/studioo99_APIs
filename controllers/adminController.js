@@ -143,3 +143,23 @@ exports.getAllViewers = async (req, res) => {
   }
 };
 
+//Update Verification Status====================
+exports.updateVerificationStatus = async (req, res) => {
+  try {
+    const { userId, verificationStatus } = req.body;
+    if (!userId || !['Pending', 'Approved', 'Rejected'].includes(verificationStatus)) {
+      return res.status(400).json({ error: "userId and valid verificationStatus are required." });
+    }
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { verificationStatus },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ message: 'Verification status updated', user });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
