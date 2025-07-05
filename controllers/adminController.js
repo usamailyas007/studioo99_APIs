@@ -1,6 +1,10 @@
 const Policy = require('../models/policy');
 const AppSettings = require('../models/AppSettings');
 const User = require('../models/User');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() }); 
+const uploadToAzure = require('../utils/azureBlob'); 
+
 
 
 
@@ -40,33 +44,48 @@ exports.getAllPolicies = async (req, res) => {
 };
 
 //App Settings=========================== 
-exports.upsertAppSettings = async (req, res) => {
-  try {
-    const {
-      appName,
-      stripeKey,
-      videoCategories,
-      subscriptionPackages
-    } = req.body;
+exports.upsertAppSettings = [
+  upload.single('appLogo'), 
+  async (req, res) => {
+    try {
+      const {
+        appName,
+        stripeKey,
+        videoCategories,
+        subscriptionPackages
+      } = req.body;
 
-    const updatedSettings = await AppSettings.findOneAndUpdate(
-      {},
-      {
+      let appLogoUrl;
+
+      if (req.file) {
+        const ext = req.file.originalname.split('.').pop();
+        const fileName = `applogo_${Date.now()}.${ext}`;
+        appLogoUrl = await uploadToAzure(req.file.buffer, fileName, 'applogos');
+      }
+
+      const updateFields = {
         appName,
         stripeKey,
         videoCategories,
         subscriptionPackages,
         updatedAt: new Date()
-      },
-      { upsert: true, new: true }
-    );
+      };
+      if (appLogoUrl) updateFields.appLogo = appLogoUrl;
 
-    res.json({ message: 'App settings updated', appSettings: updatedSettings });
-  } catch (error) {
-    console.error('App settings update error:', error);
-    res.status(500).json({ error: 'Server error', details: error.message });
+      const updatedSettings = await AppSettings.findOneAndUpdate(
+        {},
+        updateFields,
+        { upsert: true, new: true }
+      );
+
+      res.json({ message: 'App settings updated', appSettings: updatedSettings });
+    } catch (error) {
+      console.error('App settings update error:', error);
+      res.status(500).json({ error: 'Server error', details: error.message });
+    }
   }
-};
+];
+
 
 
 //Get App Settings=========================== 
