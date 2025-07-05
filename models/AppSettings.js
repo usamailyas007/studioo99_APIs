@@ -11,6 +11,7 @@ const appSettingsSchema = new mongoose.Schema({
   stripeKey: { type: String, required: true },
   videoCategories: [{ type: String }],
   subscriptionPackages: [subscriptionPackageSchema],
+  appLogo: { type: String, default: null }, 
   updatedAt: { type: Date, default: Date.now }
 });
 
