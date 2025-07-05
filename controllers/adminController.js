@@ -163,3 +163,25 @@ exports.updateVerificationStatus = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
+
+//Suspend User===================================
+exports.suspendUser = async (req, res) => {
+  try {
+    const { userId, suspended } = req.body;
+    if (typeof suspended !== 'boolean' || !userId) {
+      return res.status(400).json({ error: "userId and suspended(boolean) are required." });
+    }
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { suspended },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ message: `User ${suspended ? 'suspended' : 'unsuspended'} successfully`, user });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};

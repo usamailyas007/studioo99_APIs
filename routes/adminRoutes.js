@@ -18,14 +18,18 @@ router.post('/admin/appSetting',  adminController.upsertAppSettings);
 router.get('/user/getAppSettings',  adminController.getAppSettings);
 
 
-//Get Content Creators
+//Get Content Creators Route
 router.get('/user/getContentCreator',  adminController.getAllContentCreators);
 
-//Get All Viewers 
+//Get All Viewers Route
 router.get('/user/getViewers',  adminController.getAllViewers);
 
-//Update Verifciation Status 
+//Update Verifciation Status Route
 router.get('/user/updateVerificationStatus',  adminController.updateVerificationStatus);
+
+//Susupend User Route 
+router.get('/user/suspendUser',  adminController.suspendUser);
+
 
 
 
