@@ -5,13 +5,13 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 
 //Post Policy Route
-router.post('/admin/policy',  adminController.upsertPolicy);
+router.post('/admin/policy', authMiddleware, adminController.upsertPolicy);
 
 //Get Policy Route
 router.get('/user/getAllPolicies',  adminController.getAllPolicies);
 
 //Post App Setting route
-router.post('/admin/appSetting',  adminController.upsertAppSettings);
+router.post('/admin/appSetting',authMiddleware,  adminController.upsertAppSettings);
 
 
 //Get Policy Route
@@ -19,16 +19,16 @@ router.get('/user/getAppSettings',  adminController.getAppSettings);
 
 
 //Get Content Creators Route
-router.get('/user/getContentCreator',  adminController.getAllContentCreators);
+router.get('/user/getContentCreator', authMiddleware, adminController.getAllContentCreators);
 
 //Get All Viewers Route
-router.get('/user/getViewers',  adminController.getAllViewers);
+router.get('/user/getViewers', authMiddleware, adminController.getAllViewers);
 
 //Update Verifciation Status Route
-router.post('/user/updateVerificationStatus',  adminController.updateVerificationStatus);
+router.post('/user/updateVerificationStatus', authMiddleware, adminController.updateVerificationStatus);
 
 //Susupend User Route 
-router.post('/user/suspendUser',  adminController.suspendUser);
+router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 
 
 
