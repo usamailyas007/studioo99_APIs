@@ -36,6 +36,7 @@ otpExpiry: { type: Date },
 isVerified: { type: Boolean, default: false },
 activeStatus: { type: Boolean, default: true },
 profileImage: { type: String, default: null },
+verificationStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
 
 
 });

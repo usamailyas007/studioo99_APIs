@@ -48,6 +48,7 @@ exports.signup = async (req, res) => {
       password: hashedPassword,
       channelName: role === 'Content Creator' ? channelName : undefined,
       role,
+       verificationStatus: role === 'Content Creator' ? 'Pending' : 'Approved',
     });
 
     await newUser.save();
