@@ -15,6 +15,10 @@ exports.requestVideoUpload = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+     if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized: No user in request' });
+    }
+
     const videoDoc = new Video({
       user: userId,
       title,
