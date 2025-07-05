@@ -25,10 +25,10 @@ router.get('/user/getContentCreator',  adminController.getAllContentCreators);
 router.get('/user/getViewers',  adminController.getAllViewers);
 
 //Update Verifciation Status Route
-router.get('/user/updateVerificationStatus',  adminController.updateVerificationStatus);
+router.post('/user/updateVerificationStatus',  adminController.updateVerificationStatus);
 
 //Susupend User Route 
-router.get('/user/suspendUser',  adminController.suspendUser);
+router.post('/user/suspendUser',  adminController.suspendUser);
 
 
 
