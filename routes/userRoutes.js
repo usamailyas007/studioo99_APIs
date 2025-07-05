@@ -6,9 +6,9 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 
 //Request Upload Video Route
-router.post('/user/requestVideoUpload', userController.requestVideoUpload);
+router.post('/user/requestVideoUpload', authMiddleware, userController.requestVideoUpload);
 
 //Login Route
-router.post('/user/confirmVideoUpload', userController.confirmVideoUpload);
+router.post('/user/confirmVideoUpload', authMiddleware, userController.confirmVideoUpload);
 
 module.exports = router;
