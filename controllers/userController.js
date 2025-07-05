@@ -7,40 +7,42 @@ const getBlobSasUrl = require('../utils/getBlobSasUrl');
 // Creator Request to upload video===============
 exports.requestVideoUpload = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized: No user in request' });
+    }
+
     const userId = req.user._id;
-    console.log(userId);
     const { title, category, description, videoOriginalName, thumbnailOriginalName } = req.body;
 
     if (!title || !category || !videoOriginalName || !thumbnailOriginalName) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-     if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized: No user in request' });
-    }
-
-    const videoDoc = new Video({
+    // Prepare blob names FIRST, generate a temp videoDoc to get the _id
+    const tempVideoDoc = new Video({
       user: userId,
       title,
       category,
       description,
       status: 'uploading'
     });
-    await videoDoc.save();
 
-    const videoBlobName = `videos/${userId}/${videoDoc._id}_${videoOriginalName}`;
-    const thumbnailBlobName = `thumbnails/${userId}/${videoDoc._id}_${thumbnailOriginalName}`;
+    // Generate blob names using tempVideoDoc._id before saving
+    const videoBlobName = `videos/${userId}/${tempVideoDoc._id}_${videoOriginalName}`;
+    const thumbnailBlobName = `thumbnails/${userId}/${tempVideoDoc._id}_${thumbnailOriginalName}`;
+
+    // Now set them on the doc
+    tempVideoDoc.videoBlobName = videoBlobName;
+    tempVideoDoc.thumbnailBlobName = thumbnailBlobName;
+
+    // Save doc with all required fields present
+    await tempVideoDoc.save();
 
     const videoUploadUrl = getBlobSasUrl('videos', videoBlobName, 60, 'cw');
     const thumbnailUploadUrl = getBlobSasUrl('thumbnails', thumbnailBlobName, 60, 'cw');
 
-
-    videoDoc.videoBlobName = videoBlobName;
-    videoDoc.thumbnailBlobName = thumbnailBlobName;
-    await videoDoc.save();
-
     res.json({
-      videoId: videoDoc._id,
+      videoId: tempVideoDoc._id,
       videoUploadUrl,
       thumbnailUploadUrl
     });
