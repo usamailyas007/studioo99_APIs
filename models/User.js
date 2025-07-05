@@ -35,6 +35,8 @@ const userSchema = new mongoose.Schema({
 otpExpiry: { type: Date },
 isVerified: { type: Boolean, default: false },
 activeStatus: { type: Boolean, default: true },
+profileImage: { type: String, default: null },
+
 
 });
 

@@ -32,5 +32,8 @@ router.post('/change-password-by-id', authMiddleware, authController.changePassw
 router.post('/deleteUser', authMiddleware, authController.deleteUser);
 
 
+//Edit Profile Route
+router.post('/edit-profile', authMiddleware, authController.editProfile);
+
 
 module.exports = router;

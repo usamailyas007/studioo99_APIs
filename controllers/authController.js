@@ -3,6 +3,10 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const secret_Key = process.env.SECRET_KEY;
 const { sendOtpMail } = require('../services/otpServices'); 
+const uploadToAzure = require('../utils/azureBlob');
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 require('dotenv').config();
 
@@ -297,3 +301,40 @@ exports.deleteUser = async (req, res) => {
 };
 
 
+//Edit Profile==========================
+exports.editProfile = [
+  upload.single('profileImage'), 
+  async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const { name, channelName, email, country, region } = req.body;
+
+      const updateData = {};
+
+      if (name) updateData.name = name;
+      if (channelName) updateData.channelName = channelName;
+      if (email) updateData.email = email;
+      if (country) updateData.country = country;
+      if (region) updateData.region = region;
+
+      // Handle profile image upload if provided
+      if (req.file) {
+        const ext = req.file.originalname.split('.').pop();
+        const fileName = `profile_${userId}_${Date.now()}.${ext}`;
+        const imageUrl = await uploadToAzure(req.file.buffer, fileName, "profileimages");
+        updateData.profileImage = imageUrl;
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({ message: "Profile updated", user: updatedUser });
+    } catch (error) {
+      console.error('Edit profile error:', error);
+      res.status(500).json({ error: 'Server error', details: error.message });
+    }
+  }
+];
