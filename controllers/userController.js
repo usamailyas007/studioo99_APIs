@@ -58,7 +58,6 @@ exports.confirmVideoUpload = async (req, res) => {
     const video = await Video.findById(videoId);
     if (!video) return res.status(404).json({ error: 'Video not found' });
 
-    const getBlobSasUrl = require('../utils/getBlobSasUrl');
     const videoUrl = await getBlobSasUrl('videos', video.videoBlobName, 1440, 'r');
     const thumbnailUrl = await getBlobSasUrl('thumbnails', video.thumbnailBlobName, 1440, 'r');
 
