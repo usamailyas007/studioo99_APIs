@@ -1,9 +1,14 @@
 const express = require('express');
 const router = express.Router();
-// const userController = require('../controllers/userController');
+const userController = require('../controllers/userController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-// Example user routes
-// router.post('/user', userController.createUser);
-// router.get('/users', userController.getUsers);
+
+
+//Request Upload Video Route
+router.post('/user/requestVideoUpload', userController.requestVideoUpload);
+
+//Login Route
+router.post('/user/confirmVideoUpload', userController.confirmVideoUpload);
 
 module.exports = router;
