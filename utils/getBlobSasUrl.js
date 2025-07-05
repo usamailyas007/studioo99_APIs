@@ -10,11 +10,7 @@ const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STR
 const AZURE_STORAGE_ACCOUNT_NAME = process.env.AZURE_STORAGE_ACCOUNT_NAME;
 const AZURE_STORAGE_ACCOUNT_KEY = process.env.AZURE_STORAGE_ACCOUNT_KEY;
 
-// containerName: e.g., 'profileimages' or 'applogos'
-// blobName: fileName as uploaded
-// expiresInMinutes: link expiry (default 60)
 const getBlobSasUrl = async (containerName, blobName, expiresInMinutes = 60) => {
-  // Credentials required for signing
   const sharedKeyCredential = new StorageSharedKeyCredential(
     AZURE_STORAGE_ACCOUNT_NAME,
     AZURE_STORAGE_ACCOUNT_KEY

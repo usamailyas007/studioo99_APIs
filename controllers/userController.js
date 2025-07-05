@@ -38,8 +38,8 @@ exports.requestVideoUpload = async (req, res) => {
     // Save doc with all required fields present
     await tempVideoDoc.save();
 
-    const videoUploadUrl = getBlobSasUrl('videos', videoBlobName, 60, 'cw');
-    const thumbnailUploadUrl = getBlobSasUrl('thumbnails', thumbnailBlobName, 60, 'cw');
+    const videoUploadUrl =  await getBlobSasUrl('videos', videoBlobName, 60, 'cw');
+    const thumbnailUploadUrl = await getBlobSasUrl('thumbnails', thumbnailBlobName, 60, 'cw');
 
     res.json({
       videoId: tempVideoDoc._id,
