@@ -27,7 +27,7 @@ const getBlobSasUrl = async (containerName, blobName, expiresInMinutes = 60) => 
   const sasToken = generateBlobSASQueryParameters({
     containerName,
     blobName,
-    permissions: BlobSASPermissions.parse("r"),
+    permissions: BlobSASPermissions.parse("cw"),
     startsOn: new Date(),
     expiresOn,
     protocol: SASProtocol.Https,
