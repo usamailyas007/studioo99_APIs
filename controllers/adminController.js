@@ -81,3 +81,34 @@ exports.getAppSettings = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
+//Get All content Creators======================
+exports.getAllContentCreators = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1; 
+    const limit = 6;
+    const skip = (page - 1) * limit;
+
+    const [contentCreators, total] = await Promise.all([
+      User.find({ role: 'Content Creator' })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments({ role: 'Content Creator' })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      contentCreators,
+      pagination: {
+        total,
+        page,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};

@@ -18,5 +18,8 @@ router.post('/admin/appSetting',  adminController.upsertAppSettings);
 router.get('/user/getAppSettings',  adminController.getAppSettings);
 
 
+//Get Content Creators
+router.get('/user/getContentCreator',  adminController.getAllContentCreators);
+
 
 module.exports = router;

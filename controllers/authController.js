@@ -318,7 +318,7 @@ exports.editProfile = [
       if (country) updateData.country = country;
       if (region) updateData.region = region;
 
-      // Handle profile image upload if provided
+ 
       if (req.file) {
         const ext = req.file.originalname.split('.').pop();
         const fileName = `profile_${userId}_${Date.now()}.${ext}`;
