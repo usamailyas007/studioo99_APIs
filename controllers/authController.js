@@ -15,7 +15,7 @@ exports.signup = async (req, res) => {
   try {
     const { name, email, password, channelName, role } = req.body;
 
-    if (!['Viewer', 'Content Creator'].includes(role)) {
+    if (!['Viewer', 'Content Creator', 'Admin'].includes(role)) {
       return res.status(400).json({ error: "Role must be either 'Viewer' or 'Content Creator'" });
     }
 
