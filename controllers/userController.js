@@ -8,6 +8,7 @@ const getBlobSasUrl = require('../utils/getBlobSasUrl');
 exports.requestVideoUpload = async (req, res) => {
   try {
     const userId = req.user._id;
+    console.log(userId);
     const { title, category, description, videoOriginalName, thumbnailOriginalName } = req.body;
 
     if (!title || !category || !videoOriginalName || !thumbnailOriginalName) {
