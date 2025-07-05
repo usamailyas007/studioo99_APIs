@@ -113,3 +113,33 @@ exports.getAllContentCreators = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
+//Get All Viewers================================
+exports.getAllViewers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 6;
+    const skip = (page - 1) * limit;
+
+    const [viewers, total] = await Promise.all([
+      User.find({ role: 'Viewer' }).skip(skip).limit(limit),
+      User.countDocuments({ role: 'Viewer' })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      viewers,
+      pagination: {
+        total,
+        page,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+

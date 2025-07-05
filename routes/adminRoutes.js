@@ -21,5 +21,8 @@ router.get('/user/getAppSettings',  adminController.getAppSettings);
 //Get Content Creators
 router.get('/user/getContentCreator',  adminController.getAllContentCreators);
 
+//Get All Viewers 
+router.get('/user/getViewers',  adminController.getAllViewers);
+
 
 module.exports = router;
