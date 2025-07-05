@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
-    enum: ['Viewer', 'Content Creator'],
+    enum: ['Viewer', 'Content Creator', 'Admin'],
   },
   otp: { type: String },
 otpExpiry: { type: Date },
