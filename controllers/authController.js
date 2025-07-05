@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const secret_Key = process.env.SECRET_KEY;
 const { sendOtpMail } = require('../services/otpServices'); 
 const uploadToAzure = require('../utils/azureBlob');
+const getBlobSasUrl = require('../utils/getBlobSasUrl');
 const multer = require('multer');
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -322,11 +323,12 @@ exports.editProfile = [
 
  
       if (req.file) {
-        const ext = req.file.originalname.split('.').pop();
-        const fileName = `profile_${userId}_${Date.now()}.${ext}`;
-        const imageUrl = await uploadToAzure(req.file.buffer, fileName, "profileimages");
-        updateData.profileImage = imageUrl;
-      }
+      const ext = req.file.originalname.split('.').pop();
+      const fileName = `profile_${userId}_${Date.now()}.${ext}`;
+      await uploadToAzure(req.file.buffer, fileName, "profileimages");
+      const imageUrl = await getBlobSasUrl('profileimages', fileName);
+      updateData.profileImage = imageUrl;
+    }
 
       const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
 

@@ -4,6 +4,7 @@ const User = require('../models/User');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() }); 
 const uploadToAzure = require('../utils/azureBlob'); 
+const getBlobSasUrl = require('../utils/getBlobSasUrl');
 
 
 
@@ -57,12 +58,12 @@ exports.upsertAppSettings = [
 
       let appLogoUrl;
 
-      if (req.file) {
+          if (req.file) {
         const ext = req.file.originalname.split('.').pop();
         const fileName = `applogo_${Date.now()}.${ext}`;
-        appLogoUrl = await uploadToAzure(req.file.buffer, fileName, 'applogos');
+        await uploadToAzure(req.file.buffer, fileName, 'applogos');
+        appLogoUrl = await getBlobSasUrl('applogos', fileName);
       }
-
       const updateFields = {
         appName,
         stripeKey,
