@@ -390,33 +390,34 @@ exports.searchVideos = async (req, res) => {
       { $skip: skip },
       { $limit: limit },
       {
-        $lookup: {
-          from: 'mylists',
-          let: { videoId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$video', '$$videoId'] },
-                    { $eq: ['$user', new mongoose.Types.ObjectId(userId)] }
-                  ]
-                }
-              }
-            },
-            {
-              $project: {
-                id: '$_id',
-                videoId: '$video',
-                userId: '$user',
-                createdAt: 1,
-                updatedAt: 1
-              }
-            }
-          ],
-          as: 'myList'
+  $lookup: {
+    from: 'mylists',
+    let: { videoId: '$_id' },
+    pipeline: [
+      {
+        $match: {
+          $expr: {
+            $and: [
+              { $eq: ['$video', '$$videoId'] },
+              { $eq: ['$user', new mongoose.Types.ObjectId(userId)] } // <<< THIS IS IMPORTANT
+            ]
+          }
         }
       },
+      {
+        $project: {
+          id: '$_id',
+          videoId: '$video',
+          userId: '$user',
+          createdAt: 1,
+          updatedAt: 1
+        }
+      }
+    ],
+    as: 'myList'
+  }
+}
+,
       {
         $addFields: {
           id: "$_id"
