@@ -24,6 +24,10 @@ router.get('/user/getMyList',authMiddleware, userController.getMyList);
 router.get('/user/getAllVideos', authMiddleware, userController.getAllVideos);
 
 
+//Search All videos Route
+router.get('/user/searchVideo', authMiddleware, userController.searchVideos);
+
+
 
 
 module.exports = router;
