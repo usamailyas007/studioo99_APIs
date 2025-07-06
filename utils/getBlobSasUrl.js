@@ -1,3 +1,4 @@
+// utils/getBlobSasUrl.js
 const {
   BlobServiceClient,
   StorageSharedKeyCredential,
@@ -16,18 +17,17 @@ const getBlobSasUrl = async (containerName, blobName, expiresInMinutes = 60) => 
     AZURE_STORAGE_ACCOUNT_KEY
   );
 
+  // This client is needed only for getting blob URL
   const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
   const containerClient = blobServiceClient.getContainerClient(containerName);
   const blobClient = containerClient.getBlobClient(blobName);
 
-  // Calculate expiry time
-  const expiresOn = new Date(new Date().valueOf() + expiresInMinutes * 60 * 1000);
+  const expiresOn = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
-  // SAS Query
   const sasToken = generateBlobSASQueryParameters({
     containerName,
     blobName,
-    permissions: BlobSASPermissions.parse("cwr"),
+    permissions: BlobSASPermissions.parse("cwr"), 
     startsOn: new Date(),
     expiresOn,
     protocol: SASProtocol.Https,

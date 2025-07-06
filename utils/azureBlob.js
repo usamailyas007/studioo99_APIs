@@ -14,7 +14,7 @@ const uploadToAzure = async (fileBuffer, fileName, containerName) => {
     blobHTTPHeaders: { blobContentType: "image/png" } 
   });
 
-  return blockBlobClient.url;
+  return blockBlobClient.url; 
 };
 
 module.exports = uploadToAzure;

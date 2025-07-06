@@ -314,24 +314,20 @@ exports.editProfile = [
       const { name, channelName, email, country, region } = req.body;
 
       const updateData = {};
-
       if (name) updateData.name = name;
       if (channelName) updateData.channelName = channelName;
       if (email) updateData.email = email;
       if (country) updateData.country = country;
       if (region) updateData.region = region;
 
- 
       if (req.file) {
-      const ext = req.file.originalname.split('.').pop();
-      const fileName = `profile_${userId}_${Date.now()}.${ext}`;
-      await uploadToAzure(req.file.buffer, fileName, "profileimages");
-      const imageUrl = await getBlobSasUrl('profileimages', fileName);
-      updateData.profileImage = imageUrl;
-    }
+        const ext = req.file.originalname.split('.').pop();
+        const fileName = `profile_${userId}_${Date.now()}.${ext}`;
+        await uploadToAzure(req.file.buffer, fileName, "profileimages");
+        updateData.profileImage = `profileimages/${fileName}`;
+      }
 
       const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
-
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -343,3 +339,23 @@ exports.editProfile = [
     }
   }
 ];
+
+// Get SAS Url===================================
+exports.getProfileImageUrl = async (req, res) => {
+  try {
+    const userId = req.body.userId;
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required in the body' });
+    }
+    const user = await User.findById(userId);
+    if (!user || !user.profileImage) {
+      return res.status(404).json({ message: 'No profile image found' });
+    }
+    const [containerName, ...blobParts] = user.profileImage.split('/');
+    const blobName = blobParts.join('/');
+    const imageUrl = await getBlobSasUrl(containerName, blobName, 60); 
+    res.json({ url: imageUrl });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

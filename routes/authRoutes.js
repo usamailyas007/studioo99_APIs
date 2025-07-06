@@ -35,5 +35,8 @@ router.post('/deleteUser', authMiddleware, authController.deleteUser);
 //Edit Profile Route
 router.post('/edit-profile', authMiddleware, authController.editProfile);
 
+//Get SAS URL Route 
+router.post('/getProfileUrl', authMiddleware, authController.getProfileImageUrl);
+
 
 module.exports = router;
