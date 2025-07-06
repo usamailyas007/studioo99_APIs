@@ -31,6 +31,10 @@ router.post('/user/updateVerificationStatus', authMiddleware, adminController.up
 router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 
 
+//Get All Viewers Route
+router.get('/user/getUserStats',  adminController.getUserStats);
+
+
 
 
 module.exports = router;

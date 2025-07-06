@@ -205,3 +205,22 @@ exports.suspendUser = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
+//Get User Stats================================
+exports.getUserStats = async (req, res) => {
+  try {
+    const [viewersCount, creatorsCount] = await Promise.all([
+      User.countDocuments({ role: 'Viewer' }),
+      User.countDocuments({ role: 'Content Creator' }),
+    ]);
+
+    res.json({
+      message: "User role stats fetched successfully",
+      totalViewers: viewersCount,
+      totalContentCreators: creatorsCount
+    });
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
