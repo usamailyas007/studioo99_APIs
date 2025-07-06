@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
-
 const Video = require('../models/Video');
+const MyList = require('../models/myList');
 const getBlobSasUrl = require('../utils/getBlobSasUrl');
 
 // Creator Request to upload video===============
@@ -69,6 +69,79 @@ exports.confirmVideoUpload = async (req, res) => {
     res.json({ message: 'Upload confirmed', video });
   } catch (error) {
     res.status(500).json({ error: 'Could not confirm upload', details: error.message });
+  }
+};
+
+//Add Video To List=======================
+exports.addToMyList = async (req, res) => {
+  const { videoId, userId } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Video not found',
+      });
+    }
+
+    let myListEntry = await MyList.findOne({ user: userId, video: videoId });
+    if (myListEntry) {
+      return res.status(400).json({
+        status: 'failed',
+        message: 'Video is already in My List',
+      });
+    }
+
+    myListEntry = new MyList({ user: userId, video: videoId });
+    await myListEntry.save();
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Video added to My List',
+      data: myListEntry,
+    });
+  } catch (error) {
+    console.error('Error adding to My List:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong while adding to My List',
+      error: error.message,
+    });
+  }
+};
+
+//Remove Video To List=======================
+exports.removeFromMyList = async (req, res) => {
+  const { userId, videoId } = req.body;
+
+  try {
+    const deleted = await MyList.findOneAndDelete({ user: userId, video: videoId });
+    if (deleted) {
+      res.status(200).json({
+        status: 'success',
+        message: 'Video removed from My List',
+      });
+    } else {
+      res.status(404).json({
+        status: 'failed',
+        message: 'My List entry not found',
+      });
+    }
+  } catch (err) {
+    console.error("Error removing from My List:", err);
+    res.status(500).json({
+      status: 'failed',
+      data: err.message,
+    });
   }
 };
 
