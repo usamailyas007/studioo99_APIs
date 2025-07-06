@@ -365,7 +365,7 @@ exports.getAllVideos = async (req, res) => {
 exports.searchVideos = async (req, res) => {
   try {
     const search = req.query.search?.trim();
-    const userId = req.query.userId || req.body.userId;
+    const userId = req.query.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
@@ -399,7 +399,7 @@ exports.searchVideos = async (req, res) => {
           $expr: {
             $and: [
               { $eq: ['$video', '$$videoId'] },
-              { $eq: ['$user', new mongoose.Types.ObjectId(userId)] } // <<< THIS IS IMPORTANT
+              { $eq: ['$user', new mongoose.Types.ObjectId(userId)] } 
             ]
           }
         }
