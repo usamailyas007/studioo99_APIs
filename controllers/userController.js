@@ -2,6 +2,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const Video = require('../models/Video');
 const MyList = require('../models/myList');
+const mongoose = require('mongoose');
 const getBlobSasUrl = require('../utils/getBlobSasUrl');
 
 // Creator Request to upload video===============
@@ -145,3 +146,152 @@ exports.removeFromMyList = async (req, res) => {
   }
 };
 
+//Get All List 
+
+// exports.getMyList = async (req, res) => {
+//   try {
+//     const { userId } = req.body;
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = 10;
+//     const skip = (page - 1) * limit;
+
+//     // Fetch paginated MyList entries for this user
+//     const [myListEntries, total] = await Promise.all([
+//       MyList.find({ user: userId })
+//         .skip(skip)
+//         .limit(limit)
+//         .sort({ createdAt: -1 })
+//         .populate('video'),
+//       MyList.countDocuments({ user: userId })
+//     ]);
+
+//     const data = myListEntries.map(entry => {
+//       const ListEntry = {
+//         id: entry._id,
+//         videoId: entry.video._id,
+//         userId: entry.user,
+//         createdAt: entry.createdAt,
+//         updatedAt: entry.updatedAt,
+//       };
+
+//       const videoData = {
+//         ...entry.video.toObject(),
+//         id: entry.video._id,
+//         myList: [ListEntry]
+//       };
+
+//       return {
+//         ...ListEntry,
+//         Video: videoData
+//       };
+//     });
+
+//     return res.json({
+//       message: "My List videos fetched successfully",
+//       data,
+//       currentPage: page,
+//       totalPages: Math.ceil(total / limit),
+//       totalMyList: total
+//     });
+//   } catch (error) {
+//     console.error("Error fetching my list:", error);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// };
+exports.getMyList = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    const pipeline = [
+      { $match: { user: new mongoose.Types.ObjectId(userId) } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: 'videos',
+          localField: 'video',
+          foreignField: '_id',
+          as: 'video'
+        }
+      },
+      { $unwind: '$video' },
+      // {
+      //   $project: {
+      //     id: '$_id',
+      //     videoId: '$video._id',
+      //     userId: '$user',
+      //     createdAt: 1,
+      //     updatedAt: 1,
+      //     Video: {
+      //       id: '$video._id',
+      //       title: '$video.title',
+      //       description: '$video.description',
+      //       category: '$video.category',
+      //       status: '$video.status',
+      //       createdAt: '$video.createdAt',
+      //       updatedAt: '$video.updatedAt',
+      //       videoBlobName: '$video.videoBlobName',
+      //       videoUrl: '$video.videoUrl',
+      //       thumbnailBlobName: '$video.thumbnailBlobName',
+      //       thumbnailUrl: '$video.thumbnailUrl',
+      //       myList: [{
+      //         id: '$_id',
+      //         videoId: '$video._id',
+      //         userId: '$user',
+      //         createdAt: '$createdAt',
+      //         updatedAt: '$updatedAt'
+      //       }]
+      //     }
+      //   }
+        
+      // },
+      {
+  $project: {
+    id: "$_id",
+    videoId: "$video._id",
+    userId: "$user",
+    createdAt: 1,
+    updatedAt: 1,
+    Video: {
+      $mergeObjects: [
+        {
+          myList: [{
+            id: "$_id",
+            videoId: "$video._id",
+            userId: "$user",
+            createdAt: "$createdAt",
+            updatedAt: "$updatedAt"
+          }]
+        },
+        "$video"
+      ]
+    }
+  }
+},
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    
+    const data = await MyList.aggregate(pipeline);
+
+   
+    const total = await MyList.countDocuments({ user: userId });
+
+    return res.json({
+      message: 'My List videos fetched successfully',
+      data,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalMyList: total
+    });
+  } catch (error) {
+    console.error('Error fetching my list:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+
+//Get All Videos 
