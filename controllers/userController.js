@@ -293,50 +293,116 @@ exports.getMyList = async (req, res) => {
   }
 };
 
-
 //Get All Videos===========================
+// exports.getAllVideos = async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+
+//   const pipeline = [
+//   { $sort: { createdAt: -1 } },
+//   { $skip: skip },
+//   { $limit: limit },
+//   {
+//     $lookup: {
+//       from: 'mylists',
+//       localField: '_id',
+//       foreignField: 'video',
+//       as: 'myList'
+//     }
+//   },
+//   {
+//     $addFields: {
+//       myList: {
+//         $map: {
+//           input: "$myList",
+//           as: "item",
+//           in: {
+//             id: "$$item._id",
+//             videoId: "$$item.video",
+//             userId: "$$item.user",
+//             createdAt: "$$item.createdAt",
+//             updatedAt: "$$item.updatedAt"
+//           }
+//         }
+//       }
+//     }
+//   },
+//   {
+//     $replaceRoot: {
+//       newRoot: "$$ROOT"
+//     }
+//   }
+// ];
+
+
+//     const data = await Video.aggregate(pipeline);
+//     const total = await Video.countDocuments();
+
+//     res.json({
+//       message: 'Videos fetched successfully',
+//       data,
+//       currentPage: page,
+//       totalPages: Math.ceil(total / limit),
+//       totalVideos: total
+//     });
+//   } catch (error) {
+//     console.error('Error fetching videos:', error);
+//     res.status(500).json({ message: 'Server error', error: error.message });
+//   }
+// };
+
 exports.getAllVideos = async (req, res) => {
   try {
+    const userId = req.query.userId || req.body.userId; // support GET and POST if you like
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-  const pipeline = [
-  { $sort: { createdAt: -1 } },
-  { $skip: skip },
-  { $limit: limit },
-  {
-    $lookup: {
-      from: 'mylists',
-      localField: '_id',
-      foreignField: 'video',
-      as: 'myList'
-    }
-  },
-  {
-    $addFields: {
-      myList: {
-        $map: {
-          input: "$myList",
-          as: "item",
-          in: {
-            id: "$$item._id",
-            videoId: "$$item.video",
-            userId: "$$item.user",
-            createdAt: "$$item.createdAt",
-            updatedAt: "$$item.updatedAt"
-          }
+    const pipeline = [
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'mylists',
+          let: { videoId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$video', '$$videoId'] },
+                    { $eq: ['$user', new mongoose.Types.ObjectId(userId)] }
+                  ]
+                }
+              }
+            },
+            {
+              $project: {
+                id: '$_id',
+                videoId: '$video',
+                userId: '$user',
+                createdAt: 1,
+                updatedAt: 1
+              }
+            }
+          ],
+          as: 'myList'
+        }
+      },
+      {
+        $addFields: {
+          id: '$_id'
+        }
+      },
+      {
+        $replaceRoot: {
+          newRoot: '$$ROOT'
         }
       }
-    }
-  },
-  {
-    $replaceRoot: {
-      newRoot: "$$ROOT"
-    }
-  }
-];
-
+    ];
 
     const data = await Video.aggregate(pipeline);
     const total = await Video.countDocuments();
@@ -349,9 +415,8 @@ exports.getAllVideos = async (req, res) => {
       totalVideos: total
     });
   } catch (error) {
-    console.error('Error fetching videos:', error);
+    console.error('Error fetching videos by user:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 
