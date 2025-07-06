@@ -302,6 +302,7 @@ exports.getAllVideos = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const pipeline = [
+      { $match: { status: "ready" } },
       { $sort: { createdAt: -1 } },
       { $skip: skip },
       { $limit: limit },

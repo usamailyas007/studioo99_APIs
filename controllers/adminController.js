@@ -45,25 +45,70 @@ exports.getAllPolicies = async (req, res) => {
 };
 
 //App Settings=========================== 
+// exports.upsertAppSettings = [
+//   upload.single('appLogo'), 
+//   async (req, res) => {
+//     try {
+//       const {
+//         appName,
+//         stripeKey,
+//         videoCategories,
+//         subscriptionPackages
+//       } = req.body;
+
+//       let appLogoUrl;
+
+//           if (req.file) {
+//         const ext = req.file.originalname.split('.').pop();
+//         const fileName = `applogo_${Date.now()}.${ext}`;
+//         await uploadToAzure(req.file.buffer, fileName, 'applogos');
+//         appLogoUrl = await getBlobSasUrl('applogos', fileName);
+//       }
+//       const updateFields = {
+//         appName,
+//         stripeKey,
+//         videoCategories,
+//         subscriptionPackages,
+//         updatedAt: new Date()
+//       };
+//       if (appLogoUrl) updateFields.appLogo = appLogoUrl;
+
+//       const updatedSettings = await AppSettings.findOneAndUpdate(
+//         {},
+//         updateFields,
+//         { upsert: true, new: true }
+//       );
+
+//       res.json({ message: 'App settings updated', appSettings: updatedSettings });
+//     } catch (error) {
+//       console.error('App settings update error:', error);
+//       res.status(500).json({ error: 'Server error', details: error.message });
+//     }
+//   }
+// ];
 exports.upsertAppSettings = [
   upload.single('appLogo'), 
   async (req, res) => {
     try {
-      const {
-        appName,
-        stripeKey,
-        videoCategories,
-        subscriptionPackages
-      } = req.body;
+      let { appName, stripeKey, videoCategories, subscriptionPackages } = req.body;
 
       let appLogoUrl;
 
-          if (req.file) {
+      if (req.file) {
         const ext = req.file.originalname.split('.').pop();
         const fileName = `applogo_${Date.now()}.${ext}`;
         await uploadToAzure(req.file.buffer, fileName, 'applogos');
         appLogoUrl = await getBlobSasUrl('applogos', fileName);
       }
+
+      // Parse possible JSON strings to arrays/objects
+      if (typeof videoCategories === "string") {
+        try { videoCategories = JSON.parse(videoCategories); } catch {}
+      }
+      if (typeof subscriptionPackages === "string") {
+        try { subscriptionPackages = JSON.parse(subscriptionPackages); } catch {}
+      }
+
       const updateFields = {
         appName,
         stripeKey,
