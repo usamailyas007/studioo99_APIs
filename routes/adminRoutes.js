@@ -32,7 +32,7 @@ router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 
 
 //Get All Viewers Route
-router.get('/user/getUserStats',  adminController.getUserStats);
+router.get('/user/getUserStats', authMiddleware, adminController.getUserStats);
 
 
 
