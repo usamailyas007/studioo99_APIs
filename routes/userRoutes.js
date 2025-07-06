@@ -17,8 +17,12 @@ router.post('/user/addToMyList', authMiddleware, userController.addToMyList);
 //Remove to List Route 
 router.post('/user/removeFromMyList', authMiddleware, userController.removeFromMyList);
 
-//Get ALL list 
-router.get('/user/getMyList', userController.getMyList);
+//Get ALL list Route
+router.get('/user/getMyList',authMiddleware, userController.getMyList);
+
+//Get All videos Route
+router.get('/user/getAllVideos', authMiddleware, userController.getAllVideos);
+
 
 
 
