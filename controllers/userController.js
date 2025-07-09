@@ -439,6 +439,7 @@ exports.searchVideos = async (req, res) => {
         }
       },
       { $count: "total" }
+
     ];
     const countResult = await Video.aggregate(countPipeline);
     const total = countResult[0]?.total || 0;
