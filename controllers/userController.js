@@ -91,7 +91,6 @@ exports.requestVideoUpload = async (req, res) => {
       videoId: tempVideoDoc._id,
       videoDownloadUrl,
       thumbnailDownloadUrl
-      // No upload URLs unless you use SAS!
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to prepare URLs', details: error.message });
@@ -129,6 +128,7 @@ exports.confirmVideoUpload = async (req, res) => {
     const thumbnailUrl = `https://<your-account>.blob.core.windows.net/thumbnails/${video.thumbnailBlobName}`;
 
     video.status = 'ready';
+    video.approvalStatus = 'Pending';
     video.videoUrl = videoUrl;
     video.thumbnailUrl = thumbnailUrl;
     await video.save();
@@ -138,6 +138,7 @@ exports.confirmVideoUpload = async (req, res) => {
     res.status(500).json({ error: 'Could not confirm upload', details: error.message });
   }
 };
+
 
 
 //Add Video To List=======================

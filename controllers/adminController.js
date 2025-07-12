@@ -45,51 +45,6 @@ exports.getAllPolicies = async (req, res) => {
 };
 
 //App Settings=========================== 
-// exports.upsertAppSettings = [
-//   upload.single('appLogo'), 
-//   async (req, res) => {
-//     try {
-//       let { appName, stripeKey, videoCategories, subscriptionPackages } = req.body;
-
-//       let appLogoUrl;
-
-//       if (req.file) {
-//         const ext = req.file.originalname.split('.').pop();
-//         const fileName = `applogo_${Date.now()}.${ext}`;
-//         await uploadToAzure(req.file.buffer, fileName, 'applogos');
-//         appLogoUrl = await getBlobSasUrl('applogos', fileName);
-//       }
-
-//       // Parse possible JSON strings to arrays/objects
-//       if (typeof videoCategories === "string") {
-//         try { videoCategories = JSON.parse(videoCategories); } catch {}
-//       }
-//       if (typeof subscriptionPackages === "string") {
-//         try { subscriptionPackages = JSON.parse(subscriptionPackages); } catch {}
-//       }
-
-//       const updateFields = {
-//         appName,
-//         stripeKey,
-//         videoCategories,
-//         subscriptionPackages,
-//         updatedAt: new Date()
-//       };
-//       if (appLogoUrl) updateFields.appLogo = appLogoUrl;
-
-//       const updatedSettings = await AppSettings.findOneAndUpdate(
-//         {},
-//         updateFields,
-//         { upsert: true, new: true }
-//       );
-
-//       res.json({ message: 'App settings updated', appSettings: updatedSettings });
-//     } catch (error) {
-//       console.error('App settings update error:', error);
-//       res.status(500).json({ error: 'Server error', details: error.message });
-//     }
-//   }
-// ];
 exports.upsertAppSettings = [
   upload.single('appLogo'), 
   async (req, res) => {
@@ -166,7 +121,7 @@ exports.getAppSettings = async (req, res) => {
   }
 };
 
-//Get All content Creators======================
+//Get All content Creators==========================
 exports.getAllContentCreators = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1; 
@@ -285,5 +240,27 @@ exports.getUserStats = async (req, res) => {
   } catch (error) {
     console.error("Error fetching user stats:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+//Update Video status ==================================
+exports.updateVideoApprovalStatus = async (req, res) => {
+  try {
+    const { videoId, approvalStatus } = req.body;
+    if (!videoId || !['Approved', 'Rejected'].includes(approvalStatus)) {
+      return res.status(400).json({ error: "Invalid input" });
+    }
+
+    const video = await Video.findByIdAndUpdate(
+      videoId,
+      { approvalStatus },
+      { new: true }
+    );
+
+    if (!video) return res.status(404).json({ error: "Video not found" });
+
+    res.json({ message: `Video ${approvalStatus.toLowerCase()}`, video });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 };

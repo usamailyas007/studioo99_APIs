@@ -30,9 +30,12 @@ router.post('/user/updateVerificationStatus', authMiddleware, adminController.up
 //Susupend User Route 
 router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 
+//Update Video Status Route
+router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
+
 
 //Get All Viewers Route
-router.get('/user/getUserStats', authMiddleware, adminController.getUserStats);
+router.get('/admin/updateVieoStatus', authMiddleware, adminController.updateVideoApprovalStatus);
 
 
 
