@@ -633,13 +633,11 @@ exports.deleteVideoByUserAndId = async (req, res) => {
       return res.status(400).json({ error: 'Invalid userId or videoId' });
     }
 
-    // 1. Find the video
     const video = await Video.findOne({ _id: videoId, user: userId });
     if (!video) {
       return res.status(404).json({ error: 'Video not found for this user' });
     }
 
-    // 2. Prepare Azure Blob client
     const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
 
   
