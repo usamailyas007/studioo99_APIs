@@ -282,36 +282,7 @@ exports.getMyList = async (req, res) => {
         }
       },
       { $unwind: '$video' },
-      // {
-      //   $project: {
-      //     id: '$_id',
-      //     videoId: '$video._id',
-      //     userId: '$user',
-      //     createdAt: 1,
-      //     updatedAt: 1,
-      //     Video: {
-      //       id: '$video._id',
-      //       title: '$video.title',
-      //       description: '$video.description',
-      //       category: '$video.category',
-      //       status: '$video.status',
-      //       createdAt: '$video.createdAt',
-      //       updatedAt: '$video.updatedAt',
-      //       videoBlobName: '$video.videoBlobName',
-      //       videoUrl: '$video.videoUrl',
-      //       thumbnailBlobName: '$video.thumbnailBlobName',
-      //       thumbnailUrl: '$video.thumbnailUrl',
-      //       myList: [{
-      //         id: '$_id',
-      //         videoId: '$video._id',
-      //         userId: '$user',
-      //         createdAt: '$createdAt',
-      //         updatedAt: '$updatedAt'
-      //       }]
-      //     }
-      //   }
-        
-      // },
+    
       {
   $project: {
     id: "$_id",
@@ -359,76 +330,9 @@ exports.getMyList = async (req, res) => {
 };
 
 //Get All Videos===========================
-// exports.getAllVideos = async (req, res) => {
-//   try {
-//     const userId =  req.body.userId; 
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 10;
-//     const skip = (page - 1) * limit;
-
-//     const pipeline = [
-//       { $match: { status: "ready" } },
-//       { $sort: { createdAt: -1 } },
-//       { $skip: skip },
-//       { $limit: limit },
-//       {
-//         $lookup: {
-//           from: 'mylists',
-//           let: { videoId: '$_id' },
-//           pipeline: [
-//             {
-//               $match: {
-//                 $expr: {
-//                   $and: [
-//                     { $eq: ['$video', '$$videoId'] },
-//                     { $eq: ['$user', new mongoose.Types.ObjectId(userId)] }
-//                   ]
-//                 }
-//               }
-//             },
-//             {
-//               $project: {
-//                 id: '$_id',
-//                 videoId: '$video',
-//                 userId: '$user',
-//                 createdAt: 1,
-//                 updatedAt: 1
-//               }
-//             }
-//           ],
-//           as: 'myList'
-//         }
-//       },
-//       {
-//         $addFields: {
-//           id: '$_id'
-//         }
-//       },
-//       {
-//         $replaceRoot: {
-//           newRoot: '$$ROOT'
-//         }
-//       }
-//     ];
-
-//     const data = await Video.aggregate(pipeline);
-//     const total = await Video.countDocuments();
-
-//     res.json({
-//       message: 'Videos fetched successfully',
-//       data,
-//       currentPage: page,
-//       totalPages: Math.ceil(total / limit),
-//       totalVideos: total
-//     });
-//   } catch (error) {
-//     console.error('Error fetching videos by user:', error);
-//     res.status(500).json({ message: 'Server error', error: error.message });
-//   }
-// };
 exports.getAllVideos = async (req, res) => {
   try {
-    const userId = req.body.userId;  // Pass userId in body (or req.query.userId if preferred)
+    const userId = req.body.userId; 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -438,17 +342,15 @@ exports.getAllVideos = async (req, res) => {
       { $sort: { createdAt: -1 } },
       { $skip: skip },
       { $limit: limit },
-      // Lookup uploader (user who uploaded this video)
       {
         $lookup: {
-          from: 'users',                // Ensure this matches your MongoDB collection name
+          from: 'users',             
           localField: 'user',
           foreignField: '_id',
           as: 'uploader'
         }
       },
       { $unwind: { path: "$uploader", preserveNullAndEmptyArrays: true } },
-      // Lookup myList for current user
       {
         $lookup: {
           from: 'mylists',
@@ -500,7 +402,7 @@ exports.getAllVideos = async (req, res) => {
       },
       {
         $project: {
-          uploader: 0 // Exclude the whole uploader object; keep only uploaderProfile
+          uploader: 0
         }
       }
     ];
@@ -522,6 +424,106 @@ exports.getAllVideos = async (req, res) => {
 };
 
 //Search videos============================
+// exports.searchVideos = async (req, res) => {
+//   try {
+//     const search = req.query.search?.trim();
+//     const userId = req.query.userId;
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = 10;
+//     const skip = (page - 1) * limit;
+
+//     if (!search) {
+//       return res.status(400).json({ message: "Search term is required." });
+//     }
+
+//     const regex = new RegExp(search, 'i');
+
+//     const pipeline = [
+//       {
+//         $match: {
+//           status: "ready",
+//           $or: [
+//             { title: { $regex: regex } },
+//             { category: { $regex: regex } }
+//           ]
+//         }
+//       },
+//       { $sort: { createdAt: -1 } },
+//       { $skip: skip },
+//       { $limit: limit },
+//       {
+//   $lookup: {
+//     from: 'mylists',
+//     let: { videoId: '$_id' },
+//     pipeline: [
+//       {
+//         $match: {
+//           $expr: {
+//             $and: [
+//               { $eq: ['$video', '$$videoId'] },
+//               { $eq: ['$user', new mongoose.Types.ObjectId(userId)] } 
+//             ]
+//           }
+//         }
+//       },
+//       {
+//         $project: {
+//           id: '$_id',
+//           videoId: '$video',
+//           userId: '$user',
+//           createdAt: 1,
+//           updatedAt: 1
+//         }
+//       }
+//     ],
+//     as: 'myList'
+//   }
+// }
+// ,
+//       {
+//         $addFields: {
+//           id: "$_id"
+//         }
+//       }
+//     ];
+
+//     const data = await Video.aggregate(pipeline);
+
+//     const countPipeline = [
+//       {
+//         $match: {
+//           status: "ready",
+//           $or: [
+//             { title: { $regex: regex } },
+//             { category: { $regex: regex } }
+//           ]
+//         }
+//       },
+//       { $count: "total" }
+
+//     ];
+//     const countResult = await Video.aggregate(countPipeline);
+//     const total = countResult[0]?.total || 0;
+
+//     if (!data.length) {
+//       return res.status(404).json({ message: "No videos found matching your search." });
+//     }
+
+//     return res.status(200).json({
+//       message: 'Videos retrieved successfully',
+//       data,
+//       currentPage: page,
+//       totalPages: Math.ceil(total / limit),
+//       totalVideos: total
+//     });
+//   } catch (error) {
+//     console.error("Error searching videos:", error);
+//     return res.status(500).json({
+//       message: 'Something went wrong',
+//       error: error.message
+//     });
+//   }
+// };
 exports.searchVideos = async (req, res) => {
   try {
     const search = req.query.search?.trim();
@@ -549,44 +551,76 @@ exports.searchVideos = async (req, res) => {
       { $sort: { createdAt: -1 } },
       { $skip: skip },
       { $limit: limit },
+      // Lookup uploader details
       {
-  $lookup: {
-    from: 'mylists',
-    let: { videoId: '$_id' },
-    pipeline: [
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'uploader'
+        }
+      },
+      { $unwind: { path: "$uploader", preserveNullAndEmptyArrays: true } },
+      // Lookup user's myList for this video
       {
-        $match: {
-          $expr: {
-            $and: [
-              { $eq: ['$video', '$$videoId'] },
-              { $eq: ['$user', new mongoose.Types.ObjectId(userId)] } 
-            ]
+        $lookup: {
+          from: 'mylists',
+          let: { videoId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$video', '$$videoId'] },
+                    { $eq: ['$user', new mongoose.Types.ObjectId(userId)] }
+                  ]
+                }
+              }
+            },
+            {
+              $project: {
+                id: '$_id',
+                videoId: '$video',
+                userId: '$user',
+                createdAt: 1,
+                updatedAt: 1
+              }
+            }
+          ],
+          as: 'myList'
+        }
+      },
+      {
+        $addFields: {
+          id: "$_id",
+          uploaderProfile: {
+            name: '$uploader.name',
+            channelName: '$uploader.channelName',
+            profileImage: {
+              $cond: {
+                if: { $ifNull: ["$uploader.profileImage", false] },
+                then: {
+                  $concat: [
+                    "https://studio99.blob.core.windows.net/",
+                    "$uploader.profileImage"
+                  ]
+                },
+                else: null
+              }
+            }
           }
         }
       },
       {
         $project: {
-          id: '$_id',
-          videoId: '$video',
-          userId: '$user',
-          createdAt: 1,
-          updatedAt: 1
-        }
-      }
-    ],
-    as: 'myList'
-  }
-}
-,
-      {
-        $addFields: {
-          id: "$_id"
+          uploader: 0
         }
       }
     ];
 
     const data = await Video.aggregate(pipeline);
 
+    // Get total count for pagination
     const countPipeline = [
       {
         $match: {
@@ -598,7 +632,6 @@ exports.searchVideos = async (req, res) => {
         }
       },
       { $count: "total" }
-
     ];
     const countResult = await Video.aggregate(countPipeline);
     const total = countResult[0]?.total || 0;
@@ -622,3 +655,4 @@ exports.searchVideos = async (req, res) => {
     });
   }
 };
+
