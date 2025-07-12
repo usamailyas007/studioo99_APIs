@@ -28,7 +28,7 @@ router.get('/user/getAllVideos', authMiddleware, userController.getAllVideos);
 router.get('/user/searchVideo', authMiddleware, userController.searchVideos);
 
 //Incremnt view to video Route
-router.post('/incrementView', userController.incrementViewCount);
+router.post('/user/incrementView', userController.incrementViewCount);
 
 
 
