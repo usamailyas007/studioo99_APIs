@@ -424,106 +424,6 @@ exports.getAllVideos = async (req, res) => {
 };
 
 //Search videos============================
-// exports.searchVideos = async (req, res) => {
-//   try {
-//     const search = req.query.search?.trim();
-//     const userId = req.query.userId;
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = 10;
-//     const skip = (page - 1) * limit;
-
-//     if (!search) {
-//       return res.status(400).json({ message: "Search term is required." });
-//     }
-
-//     const regex = new RegExp(search, 'i');
-
-//     const pipeline = [
-//       {
-//         $match: {
-//           status: "ready",
-//           $or: [
-//             { title: { $regex: regex } },
-//             { category: { $regex: regex } }
-//           ]
-//         }
-//       },
-//       { $sort: { createdAt: -1 } },
-//       { $skip: skip },
-//       { $limit: limit },
-//       {
-//   $lookup: {
-//     from: 'mylists',
-//     let: { videoId: '$_id' },
-//     pipeline: [
-//       {
-//         $match: {
-//           $expr: {
-//             $and: [
-//               { $eq: ['$video', '$$videoId'] },
-//               { $eq: ['$user', new mongoose.Types.ObjectId(userId)] } 
-//             ]
-//           }
-//         }
-//       },
-//       {
-//         $project: {
-//           id: '$_id',
-//           videoId: '$video',
-//           userId: '$user',
-//           createdAt: 1,
-//           updatedAt: 1
-//         }
-//       }
-//     ],
-//     as: 'myList'
-//   }
-// }
-// ,
-//       {
-//         $addFields: {
-//           id: "$_id"
-//         }
-//       }
-//     ];
-
-//     const data = await Video.aggregate(pipeline);
-
-//     const countPipeline = [
-//       {
-//         $match: {
-//           status: "ready",
-//           $or: [
-//             { title: { $regex: regex } },
-//             { category: { $regex: regex } }
-//           ]
-//         }
-//       },
-//       { $count: "total" }
-
-//     ];
-//     const countResult = await Video.aggregate(countPipeline);
-//     const total = countResult[0]?.total || 0;
-
-//     if (!data.length) {
-//       return res.status(404).json({ message: "No videos found matching your search." });
-//     }
-
-//     return res.status(200).json({
-//       message: 'Videos retrieved successfully',
-//       data,
-//       currentPage: page,
-//       totalPages: Math.ceil(total / limit),
-//       totalVideos: total
-//     });
-//   } catch (error) {
-//     console.error("Error searching videos:", error);
-//     return res.status(500).json({
-//       message: 'Something went wrong',
-//       error: error.message
-//     });
-//   }
-// };
 exports.searchVideos = async (req, res) => {
   try {
     const search = req.query.search?.trim();
@@ -561,7 +461,6 @@ exports.searchVideos = async (req, res) => {
         }
       },
       { $unwind: { path: "$uploader", preserveNullAndEmptyArrays: true } },
-      // Lookup user's myList for this video
       {
         $lookup: {
           from: 'mylists',
@@ -619,8 +518,6 @@ exports.searchVideos = async (req, res) => {
     ];
 
     const data = await Video.aggregate(pipeline);
-
-    // Get total count for pagination
     const countPipeline = [
       {
         $match: {
@@ -656,3 +553,29 @@ exports.searchVideos = async (req, res) => {
   }
 };
 
+exports.incrementViewCount = async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    if (!videoId) {
+      return res.status(400).json({ error: "videoId is required" });
+    }
+
+    const video = await Video.findByIdAndUpdate(
+      videoId,
+      { $inc: { views: 1 } },  
+      { new: true }
+    );
+
+    if (!video) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+
+    res.json({
+      message: "View count incremented",
+      views: video.views,
+      videoId: video._id
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};

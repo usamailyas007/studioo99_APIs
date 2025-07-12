@@ -10,7 +10,8 @@ const videoSchema = new mongoose.Schema({
   thumbnailBlobName: { type: String, required: true },   
   thumbnailUrl: { type: String },
   status: { type: String, enum: ['uploading', 'processing', 'ready', 'failed'], default: 'uploading' },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+    views: { type: Number, default: 0 } 
 });
 
 module.exports = mongoose.model('Video', videoSchema);
