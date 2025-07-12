@@ -49,21 +49,25 @@ exports.getAllPolicies = async (req, res) => {
 //   upload.single('appLogo'), 
 //   async (req, res) => {
 //     try {
-//       const {
-//         appName,
-//         stripeKey,
-//         videoCategories,
-//         subscriptionPackages
-//       } = req.body;
+//       let { appName, stripeKey, videoCategories, subscriptionPackages } = req.body;
 
 //       let appLogoUrl;
 
-//           if (req.file) {
+//       if (req.file) {
 //         const ext = req.file.originalname.split('.').pop();
 //         const fileName = `applogo_${Date.now()}.${ext}`;
 //         await uploadToAzure(req.file.buffer, fileName, 'applogos');
 //         appLogoUrl = await getBlobSasUrl('applogos', fileName);
 //       }
+
+//       // Parse possible JSON strings to arrays/objects
+//       if (typeof videoCategories === "string") {
+//         try { videoCategories = JSON.parse(videoCategories); } catch {}
+//       }
+//       if (typeof subscriptionPackages === "string") {
+//         try { subscriptionPackages = JSON.parse(subscriptionPackages); } catch {}
+//       }
+
 //       const updateFields = {
 //         appName,
 //         stripeKey,
@@ -98,10 +102,9 @@ exports.upsertAppSettings = [
         const ext = req.file.originalname.split('.').pop();
         const fileName = `applogo_${Date.now()}.${ext}`;
         await uploadToAzure(req.file.buffer, fileName, 'applogos');
-        appLogoUrl = await getBlobSasUrl('applogos', fileName);
+        appLogoUrl = `https://studio99.blob.core.windows.net/applogos/${fileName}`;
       }
 
-      // Parse possible JSON strings to arrays/objects
       if (typeof videoCategories === "string") {
         try { videoCategories = JSON.parse(videoCategories); } catch {}
       }
@@ -109,11 +112,27 @@ exports.upsertAppSettings = [
         try { subscriptionPackages = JSON.parse(subscriptionPackages); } catch {}
       }
 
+      let existing = await AppSettings.findOne({});
+
+      let mergedCategories = videoCategories || [];
+      if (existing && existing.videoCategories) {
+        mergedCategories = Array.from(new Set([...existing.videoCategories, ...mergedCategories]));
+      }
+
+      let mergedPackages = subscriptionPackages || [];
+      if (existing && existing.subscriptionPackages && Array.isArray(subscriptionPackages)) {
+        const existingNames = new Set(existing.subscriptionPackages.map(p => p.name));
+        mergedPackages = [
+          ...existing.subscriptionPackages,
+          ...mergedPackages.filter(p => !existingNames.has(p.name))
+        ];
+      }
+
       const updateFields = {
         appName,
         stripeKey,
-        videoCategories,
-        subscriptionPackages,
+        videoCategories: mergedCategories,
+        subscriptionPackages: mergedPackages,
         updatedAt: new Date()
       };
       if (appLogoUrl) updateFields.appLogo = appLogoUrl;
@@ -131,7 +150,6 @@ exports.upsertAppSettings = [
     }
   }
 ];
-
 
 
 //Get App Settings=========================== 
