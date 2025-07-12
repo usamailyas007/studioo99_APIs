@@ -553,6 +553,7 @@ exports.searchVideos = async (req, res) => {
   }
 };
 
+//Incremnent View================================
 exports.incrementViewCount = async (req, res) => {
   try {
     const { videoId } = req.body;
@@ -576,6 +577,51 @@ exports.incrementViewCount = async (req, res) => {
       videoId: video._id
     });
   } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+
+//Get Video by ID========================
+exports.getVideoById = async (req, res) => {
+  try {
+    const { videoId } = req.body; 
+
+    if (!mongoose.Types.ObjectId.isValid(videoId)) {
+      return res.status(400).json({ error: "Invalid video ID" });
+    }
+
+    // Find video and populate uploader info
+    const video = await Video.findById(videoId)
+      .populate({
+        path: 'user',
+        select: 'name channelName profileImage email' 
+      });
+
+    if (!video) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+
+    let uploaderProfileImage = null;
+    if (video.user && video.user.profileImage) {
+      uploaderProfileImage = `https://studio99.blob.core.windows.net/${video.user.profileImage}`;
+    }
+
+    res.json({
+      message: "Video fetched successfully",
+      video: {
+        ...video.toObject(),
+        uploader: video.user ? {
+          name: video.user.name,
+          channelName: video.user.channelName,
+          email: video.user.email,
+          profileImage: uploaderProfileImage
+        } : null
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching video:', error);
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
