@@ -31,7 +31,7 @@ router.get('/user/searchVideo', authMiddleware, userController.searchVideos);
 router.post('/user/incrementView', authMiddleware, userController.incrementViewCount);
 
 //Get Video by ID 
-router.post('/user/getVideoById', authMiddleware, userController.getVideoById);
+router.get('/user/getVideosByUserId', authMiddleware, userController.getVideosByUserId);
 
 
 

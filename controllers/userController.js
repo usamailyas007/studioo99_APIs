@@ -583,45 +583,38 @@ exports.incrementViewCount = async (req, res) => {
 
 
 //Get Video by ID========================
-exports.getVideoById = async (req, res) => {
+exports.getVideosByUserId = async (req, res) => {
   try {
-    const { videoId } = req.body; 
+    const { userId } = req.body; // Or use req.query.userId
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    if (!mongoose.Types.ObjectId.isValid(videoId)) {
-      return res.status(400).json({ error: "Invalid video ID" });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
     }
 
-    // Find video and populate uploader info
-    const video = await Video.findById(videoId)
-      .populate({
-        path: 'user',
-        select: 'name channelName profileImage email' 
-      });
+    // Fetch videos by uploader (user)
+    const [videos, total] = await Promise.all([
+      Video.find({ user: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Video.countDocuments({ user: userId })
+    ]);
 
-    if (!video) {
-      return res.status(404).json({ error: "Video not found" });
-    }
-
-    let uploaderProfileImage = null;
-    if (video.user && video.user.profileImage) {
-      uploaderProfileImage = `https://studio99.blob.core.windows.net/${video.user.profileImage}`;
-    }
+    const totalPages = Math.ceil(total / limit);
 
     res.json({
-      message: "Video fetched successfully",
-      video: {
-        ...video.toObject(),
-        uploader: video.user ? {
-          name: video.user.name,
-          channelName: video.user.channelName,
-          email: video.user.email,
-          profileImage: uploaderProfileImage
-        } : null
-      }
+      message: "Videos fetched successfully",
+      data: videos,       // array of plain video docs, no uploader info
+      currentPage: page,
+      totalPages,
+      totalVideos: total
     });
-
   } catch (error) {
-    console.error('Error fetching video:', error);
+    console.error('Error fetching videos by user:', error);
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
