@@ -359,9 +359,76 @@ exports.getMyList = async (req, res) => {
 };
 
 //Get All Videos===========================
+// exports.getAllVideos = async (req, res) => {
+//   try {
+//     const userId =  req.body.userId; 
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+
+//     const pipeline = [
+//       { $match: { status: "ready" } },
+//       { $sort: { createdAt: -1 } },
+//       { $skip: skip },
+//       { $limit: limit },
+//       {
+//         $lookup: {
+//           from: 'mylists',
+//           let: { videoId: '$_id' },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $and: [
+//                     { $eq: ['$video', '$$videoId'] },
+//                     { $eq: ['$user', new mongoose.Types.ObjectId(userId)] }
+//                   ]
+//                 }
+//               }
+//             },
+//             {
+//               $project: {
+//                 id: '$_id',
+//                 videoId: '$video',
+//                 userId: '$user',
+//                 createdAt: 1,
+//                 updatedAt: 1
+//               }
+//             }
+//           ],
+//           as: 'myList'
+//         }
+//       },
+//       {
+//         $addFields: {
+//           id: '$_id'
+//         }
+//       },
+//       {
+//         $replaceRoot: {
+//           newRoot: '$$ROOT'
+//         }
+//       }
+//     ];
+
+//     const data = await Video.aggregate(pipeline);
+//     const total = await Video.countDocuments();
+
+//     res.json({
+//       message: 'Videos fetched successfully',
+//       data,
+//       currentPage: page,
+//       totalPages: Math.ceil(total / limit),
+//       totalVideos: total
+//     });
+//   } catch (error) {
+//     console.error('Error fetching videos by user:', error);
+//     res.status(500).json({ message: 'Server error', error: error.message });
+//   }
+// };
 exports.getAllVideos = async (req, res) => {
   try {
-    const userId =  req.body.userId; 
+    const userId = req.body.userId;  // Pass userId in body (or req.query.userId if preferred)
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -371,6 +438,17 @@ exports.getAllVideos = async (req, res) => {
       { $sort: { createdAt: -1 } },
       { $skip: skip },
       { $limit: limit },
+      // Lookup uploader (user who uploaded this video)
+      {
+        $lookup: {
+          from: 'users',                // Ensure this matches your MongoDB collection name
+          localField: 'user',
+          foreignField: '_id',
+          as: 'uploader'
+        }
+      },
+      { $unwind: { path: "$uploader", preserveNullAndEmptyArrays: true } },
+      // Lookup myList for current user
       {
         $lookup: {
           from: 'mylists',
@@ -401,18 +479,34 @@ exports.getAllVideos = async (req, res) => {
       },
       {
         $addFields: {
-          id: '$_id'
+          id: '$_id',
+          uploaderProfile: {
+            name: '$uploader.name',
+            channelName: '$uploader.channelName',
+            profileImage: {
+              $cond: {
+                if: { $ifNull: ["$uploader.profileImage", false] },
+                then: {
+                  $concat: [
+                    "https://studio99.blob.core.windows.net/",
+                    "$uploader.profileImage"
+                  ]
+                },
+                else: null
+              }
+            }
+          }
         }
       },
       {
-        $replaceRoot: {
-          newRoot: '$$ROOT'
+        $project: {
+          uploader: 0 // Exclude the whole uploader object; keep only uploaderProfile
         }
       }
     ];
 
     const data = await Video.aggregate(pipeline);
-    const total = await Video.countDocuments();
+    const total = await Video.countDocuments({ status: "ready" });
 
     res.json({
       message: 'Videos fetched successfully',

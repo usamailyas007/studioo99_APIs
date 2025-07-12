@@ -357,14 +357,10 @@ exports.editProfile = [
       let publicImageUrl = null;
 
       if (req.file) {
-        // 1. Prepare file name
         const ext = req.file.originalname.split('.').pop();
         const fileName = `profile_${userId}_${Date.now()}.${ext}`;
-        // 2. Upload to Azure Blob Storage, container: "profileimages"
         await uploadToAzure(req.file.buffer, fileName, "profileimages");
-        // 3. Store the path (recommended: without double 'profileimages')
         updateData.profileImage = `profileimages/${fileName}`;
-        // 4. Build the public URL
         publicImageUrl = `https://studio99.blob.core.windows.net/profileimages/${fileName}`;
       }
 
