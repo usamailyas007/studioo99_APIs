@@ -33,6 +33,10 @@ router.post('/user/incrementView', authMiddleware, userController.incrementViewC
 //Get Video by ID 
 router.get('/user/getVideosByUserId', authMiddleware, userController.getVideosByUserId);
 
+//Delete Video Route
+router.post('/user/deletVideo', authMiddleware, userController.deleteVideoByUserAndId);
+
+
 
 
 

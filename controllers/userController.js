@@ -4,6 +4,7 @@ const Video = require('../models/Video');
 const MyList = require('../models/myList');
 const mongoose = require('mongoose');
 const getBlobSasUrl = require('../utils/getBlobSasUrl');
+const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
 // Creator Request to upload video===============
 // exports.requestVideoUpload = async (req, res) => {
@@ -582,10 +583,10 @@ exports.incrementViewCount = async (req, res) => {
 };
 
 
-//Get Video by ID========================
+//Get Video by ID===============================
 exports.getVideosByUserId = async (req, res) => {
   try {
-    const { userId } = req.body; // Or use req.query.userId
+    const { userId } = req.body; 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -594,7 +595,6 @@ exports.getVideosByUserId = async (req, res) => {
       return res.status(400).json({ error: "Invalid user ID" });
     }
 
-    // Fetch videos by uploader (user)
     const [videos, total] = await Promise.all([
       Video.find({ user: userId })
         .sort({ createdAt: -1 })
@@ -607,7 +607,7 @@ exports.getVideosByUserId = async (req, res) => {
 
     res.json({
       message: "Videos fetched successfully",
-      data: videos,       // array of plain video docs, no uploader info
+      data: videos,      
       currentPage: page,
       totalPages,
       totalVideos: total
@@ -618,3 +618,51 @@ exports.getVideosByUserId = async (req, res) => {
   }
 };
 
+
+//Delete Video by userID and videoID=================
+exports.deleteVideoByUserAndId = async (req, res) => {
+  try {
+    const { userId, videoId } = req.body;
+
+    if (!userId || !videoId) {
+      return res.status(400).json({ error: 'userId and videoId are required' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(videoId)) {
+      return res.status(400).json({ error: 'Invalid userId or videoId' });
+    }
+
+    // 1. Find the video
+    const video = await Video.findOne({ _id: videoId, user: userId });
+    if (!video) {
+      return res.status(404).json({ error: 'Video not found for this user' });
+    }
+
+    // 2. Prepare Azure Blob client
+    const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+
+  
+    if (video.videoBlobName) {
+      const videoContainer = video.videoBlobName.split('/')[0];
+      const videoBlobName = video.videoBlobName.split('/').slice(1).join('/');
+      const videoContainerClient = blobServiceClient.getContainerClient(videoContainer);
+      const videoBlockBlobClient = videoContainerClient.getBlockBlobClient(videoBlobName);
+      await videoBlockBlobClient.deleteIfExists();
+    }
+
+    if (video.thumbnailBlobName) {
+      const thumbContainer = video.thumbnailBlobName.split('/')[0];
+      const thumbBlobName = video.thumbnailBlobName.split('/').slice(1).join('/');
+      const thumbContainerClient = blobServiceClient.getContainerClient(thumbContainer);
+      const thumbBlockBlobClient = thumbContainerClient.getBlockBlobClient(thumbBlobName);
+      await thumbBlockBlobClient.deleteIfExists();
+    }
+
+    await Video.deleteOne({ _id: videoId });
+
+    res.json({ message: "Video and related files deleted successfully" });
+  } catch (error) {
+    console.error('Error deleting video:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
