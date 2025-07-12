@@ -340,6 +340,7 @@ exports.deleteUser = async (req, res) => {
 //   }
 // ];
 exports.editProfile = [
+  // Multer middleware for single file upload
   upload.single('profileImage'), 
   async (req, res) => {
     try {
@@ -353,12 +354,18 @@ exports.editProfile = [
       if (country) updateData.country = country;
       if (region) updateData.region = region;
 
+      let publicImageUrl = null;
+
       if (req.file) {
+        // 1. Prepare file name
         const ext = req.file.originalname.split('.').pop();
         const fileName = `profile_${userId}_${Date.now()}.${ext}`;
+        // 2. Upload to Azure Blob Storage, container: "profileimages"
         await uploadToAzure(req.file.buffer, fileName, "profileimages");
-    
+        // 3. Store the path (recommended: without double 'profileimages')
         updateData.profileImage = `profileimages/${fileName}`;
+        // 4. Build the public URL
+        publicImageUrl = `https://studio99.blob.core.windows.net/profileimages/${fileName}`;
       }
 
       const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
@@ -366,7 +373,13 @@ exports.editProfile = [
         return res.status(404).json({ error: "User not found" });
       }
 
-      res.json({ message: "Profile updated", user: updatedUser });
+      res.json({
+        message: "Profile updated",
+        user: updatedUser,
+        profileImageUrl: publicImageUrl || (updatedUser.profileImage
+            ? `https://studio99.blob.core.windows.net/${updatedUser.profileImage}`
+            : null)
+      });
     } catch (error) {
       console.error('Edit profile error:', error);
       res.status(500).json({ error: 'Server error', details: error.message });
