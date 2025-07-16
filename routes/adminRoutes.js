@@ -35,7 +35,7 @@ router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 
 
 //Get All Viewers Route
-router.get('/admin/updateVieoStatus', authMiddleware, adminController.updateVideoApprovalStatus);
+router.post('/admin/updateVieoStatus', authMiddleware, adminController.updateVideoApprovalStatus);
 
 
 
