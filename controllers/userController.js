@@ -68,6 +68,7 @@ exports.requestVideoUpload = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Create DB record for video
     const tempVideoDoc = new Video({
       user: userId,
       title,
@@ -85,18 +86,40 @@ exports.requestVideoUpload = async (req, res) => {
 
     await tempVideoDoc.save();
 
+    // Generate SAS upload URLs
+    const videoUploadUrl = await getBlobSasUrl('videos', videoBlobName, 60, 'cw');
+    const thumbnailUploadUrl = await getBlobSasUrl('thumbnails', thumbnailBlobName, 60, 'cw');
 
-const videoDownloadUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/videos/${videoBlobName}`;
-const thumbnailDownloadUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/thumbnails/${thumbnailBlobName}`;
-
-
+    // The playback (read) URL will be public, so no need to save SAS here
     res.json({
       videoId: tempVideoDoc._id,
-      videoDownloadUrl,
-      thumbnailDownloadUrl
+      videoUploadUrl,
+      thumbnailUploadUrl,
+      // The client can construct the playback URL after upload (see below)
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to prepare URLs', details: error.message });
+    res.status(500).json({ error: 'Failed to get SAS URLs', details: error.message });
+  }
+};
+exports.confirmVideoUpload = async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    const video = await Video.findById(videoId);
+    if (!video) return res.status(404).json({ error: 'Video not found' });
+
+    // Use your real storage account name below
+    const account = "studio99";
+    const videoUrl = `https://${account}.blob.core.windows.net/videos/${video.videoBlobName}`;
+    const thumbnailUrl = `https://${account}.blob.core.windows.net/thumbnails/${video.thumbnailBlobName}`;
+
+    video.status = 'ready';
+    video.videoUrl = videoUrl;
+    video.thumbnailUrl = thumbnailUrl;
+    await video.save();
+
+    res.json({ message: 'Upload confirmed', video });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not confirm upload', details: error.message });
   }
 };
 
@@ -121,29 +144,6 @@ const thumbnailDownloadUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.wi
 //   }
 // };
 // Creator confirm the video upload
-exports.confirmVideoUpload = async (req, res) => {
-  try {
-    const { videoId } = req.body;
-    const video = await Video.findById(videoId);
-    if (!video) return res.status(404).json({ error: 'Video not found' });
-
-    const videoUrl = `https://<your-account>.blob.core.windows.net/videos/${video.videoBlobName}`;
-    const thumbnailUrl = `https://<your-account>.blob.core.windows.net/thumbnails/${video.thumbnailBlobName}`;
-
-    video.status = 'ready';
-    video.approvalStatus = 'Pending';
-    video.videoUrl = videoUrl;
-    video.thumbnailUrl = thumbnailUrl;
-    await video.save();
-
-    res.json({ message: 'Upload confirmed', video });
-  } catch (error) {
-    res.status(500).json({ error: 'Could not confirm upload', details: error.message });
-  }
-};
-
-
-
 //Add Video To List=======================
 exports.addToMyList = async (req, res) => {
   const { videoId, userId } = req.body;
