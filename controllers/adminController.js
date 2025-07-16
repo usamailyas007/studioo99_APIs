@@ -1,6 +1,7 @@
 const Policy = require('../models/policy');
 const AppSettings = require('../models/AppSettings');
 const User = require('../models/User');
+const Video = require('../models/Video');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() }); 
 const uploadToAzure = require('../utils/azureBlob'); 
