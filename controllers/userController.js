@@ -6,6 +6,8 @@ const mongoose = require('mongoose');
 const { BlobServiceClient } = require('@azure/storage-blob');
 const getBlobSasUrl = require('../utils/getBlobSasUrl');
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+const AZURE_STORAGE_ACCOUNT_NAME = process.env.AZURE_STORAGE_ACCOUNT_NAME || 'studio99';
+
 
 // Creator Request to upload video===============
 // exports.requestVideoUpload = async (req, res) => {
@@ -84,8 +86,9 @@ exports.requestVideoUpload = async (req, res) => {
     await tempVideoDoc.save();
 
 
-    const videoDownloadUrl = `https://<your-account>.blob.core.windows.net/videos/${videoBlobName}`;
-    const thumbnailDownloadUrl = `https://<your-account>.blob.core.windows.net/thumbnails/${thumbnailBlobName}`;
+const videoDownloadUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/videos/${videoBlobName}`;
+const thumbnailDownloadUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/thumbnails/${thumbnailBlobName}`;
+
 
     res.json({
       videoId: tempVideoDoc._id,
