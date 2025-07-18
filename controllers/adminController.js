@@ -288,3 +288,36 @@ exports.createCoupon = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 }
+
+//Get All coupons
+
+exports.getCoupons = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+    const skip = (page - 1) * limit;
+
+    const [coupons, total] = await Promise.all([
+      Coupon.find({})
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 }), 
+      Coupon.countDocuments()
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      coupons,
+      pagination: {
+        total,
+        page,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};

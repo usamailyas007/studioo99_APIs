@@ -40,6 +40,9 @@ router.post('/admin/updateVieoStatus', authMiddleware, adminController.updateVid
 //Genrate coupon code 
 router.post('/admin/createCoupon', authMiddleware, adminController.createCoupon);
 
+//Get all coupons
+router.get('/admin/coupons', authMiddleware, adminController.getCoupons);
+
 
 
 
