@@ -46,6 +46,14 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ error: "Email already registered" });
     }
 
+    if (couponCode) {
+  const couponUsed = await User.findOne({
+    couponCode: couponCode.trim().toUpperCase()
+  });
+  if (couponUsed) {
+    return res.status(400).json({ error: "This coupon code already in use" });
+  }
+}
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
