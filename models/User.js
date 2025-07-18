@@ -40,6 +40,7 @@ verificationStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected'], d
 suspended: { type: Boolean, default: false },
 subscriptionPlan: { type: String, default: "Free" },
 subscriptionStatus: { type: String, defaultValue: "inactive"  },
+couponCode: { type: String, default: null },
 stripeCustomerId: {  type: String },
 
 

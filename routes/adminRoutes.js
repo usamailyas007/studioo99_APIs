@@ -37,6 +37,10 @@ router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 //Get All Viewers Route
 router.post('/admin/updateVieoStatus', authMiddleware, adminController.updateVideoApprovalStatus);
 
+//Genrate coupon code 
+router.post('/admin/createCoupon', authMiddleware, adminController.createCoupon);
+
+
 
 
 

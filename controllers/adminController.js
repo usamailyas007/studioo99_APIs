@@ -2,6 +2,7 @@ const Policy = require('../models/policy');
 const AppSettings = require('../models/AppSettings');
 const User = require('../models/User');
 const Video = require('../models/Video');
+const Coupon = require('../models/Coupon');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() }); 
 const uploadToAzure = require('../utils/azureBlob'); 
@@ -265,3 +266,25 @@ exports.updateVideoApprovalStatus = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
+//Add Coupon code======================================
+exports.createCoupon = async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    const existing = await Coupon.findOne({ code: code.trim().toUpperCase() });
+    if (existing) {
+      return res.status(400).json({ error: 'Coupon code already exists' });
+    }
+
+    const coupon = new Coupon({
+      code: code.trim().toUpperCase()
+    });
+
+    await coupon.save();
+    res.status(200).json({ message: 'Coupon created', coupon });
+  } catch (error) {
+    console.error('Create coupon error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+}
