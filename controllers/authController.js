@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Coupon = require('../models/Coupon');
 const bcrypt = require('bcryptjs');
 const secret_Key = process.env.SECRET_KEY;
 const { sendOtpMail } = require('../services/otpServices'); 
@@ -14,7 +15,7 @@ require('dotenv').config();
 
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, channelName, role } = req.body;
+    const { name, email, password, channelName, role, couponCode } = req.body;
 
     if (!['Viewer', 'Content Creator', 'Admin'].includes(role)) {
       return res.status(400).json({ error: "Role must be either 'Viewer' or 'Content Creator'" });
@@ -22,6 +23,13 @@ exports.signup = async (req, res) => {
 
     if (role === 'Content Creator' && !channelName) {
       return res.status(400).json({ error: "Channel name is required for Content Creators" });
+    }
+
+       if (couponCode) {
+      const coupon = await Coupon.findOne({ code: couponCode.trim().toUpperCase() });
+      if (!coupon) {
+        return res.status(400).json({ error: "Invalid coupon code, try to add correct one" });
+      }
     }
 
     if (role === 'Viewer' && channelName) {
@@ -47,6 +55,7 @@ exports.signup = async (req, res) => {
       password: hashedPassword,
       channelName: role === 'Content Creator' ? channelName : undefined,
       role,
+      couponCode,
        verificationStatus: role === 'Content Creator' ? 'Pending' : 'Approved',
     });
 

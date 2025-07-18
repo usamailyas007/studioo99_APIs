@@ -290,7 +290,6 @@ exports.createCoupon = async (req, res) => {
 }
 
 //Get All coupons
-
 exports.getCoupons = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
