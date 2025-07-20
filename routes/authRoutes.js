@@ -16,6 +16,7 @@ router.post('/addRegion', authMiddleware, authController.addRegion);
 //Send OTP Route
 router.post('/send-otp', authController.sendOtp);
 
+
 //Veirfy OTP Route
 router.post('/verify-otp', authController.verifyOtp);
 
