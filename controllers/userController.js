@@ -693,9 +693,9 @@ exports.getAllPlans = async (req, res) => {
       // Determine the plan name based on the interval
       let planName = price.product?.name ?? 'Unknown Plan';
       if (price.recurring?.interval === 'month') {
-        planName = `${planName} Monthly`;
+        planName = `${planName}`;
       } else if (price.recurring?.interval === 'year') {
-        planName = `${planName} Yearly`;
+        planName = `${planName}`;
       }
 
       // Add custom logic for child profiles
