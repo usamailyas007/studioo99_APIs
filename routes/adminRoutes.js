@@ -13,10 +13,8 @@ router.get('/user/getAllPolicies',  adminController.getAllPolicies);
 //Post App Setting route
 router.post('/admin/appSetting',authMiddleware,  adminController.upsertAppSettings);
 
-
 //Get Policy Route
 router.get('/user/getAppSettings',  adminController.getAppSettings);
-
 
 //Get Content Creators Route
 router.get('/user/getContentCreator', authMiddleware, adminController.getAllContentCreators);
@@ -33,7 +31,6 @@ router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 //Update Video Status Route
 router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 
-
 //Get All Viewers Route
 router.post('/admin/updateVieoStatus', authMiddleware, adminController.updateVideoApprovalStatus);
 
@@ -42,7 +39,6 @@ router.post('/admin/createCoupon', authMiddleware, adminController.createCoupon)
 
 //Get all coupons
 router.get('/admin/coupons', authMiddleware, adminController.getCoupons);
-
 
 
 

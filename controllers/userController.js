@@ -7,6 +7,9 @@ const { BlobServiceClient } = require('@azure/storage-blob');
 const getBlobSasUrl = require('../utils/getBlobSasUrl');
 const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const AZURE_STORAGE_ACCOUNT_NAME = process.env.AZURE_STORAGE_ACCOUNT_NAME || 'studio99';
+require('dotenv').config(); 
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 
 // Creator Request to upload video===============
@@ -667,5 +670,54 @@ exports.deleteVideoByUserAndId = async (req, res) => {
   } catch (error) {
     console.error('Error deleting video:', error);
     res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+
+// =====================Subscription==================
+
+exports.getAllPlans = async (req, res) => {
+  try {
+    const prices = await stripe.prices.list({
+      expand: ['data.product'],
+      active: true,
+      limit: 100,
+    });
+
+    const formattedPlans = {};
+
+    prices.data.forEach((price) => {
+      // Determine the plan name based on the interval
+      let planName = price.product?.name ?? 'Unknown Plan';
+      if (price.recurring?.interval === 'month') {
+        planName = `${planName} Monthly`;
+      } else if (price.recurring?.interval === 'year') {
+        planName = `${planName} Yearly`;
+      }
+
+      // Add custom logic for child profiles
+      // let childProfiles = 0;
+      // if (planName.includes('Platinum')) {
+      //   childProfiles = 6;
+      // } else if (planName.includes('Silver')) {
+      //   childProfiles = 3;
+      // }
+
+      // Add the plan to the formatted response
+      formattedPlans[planName] = {
+        planId: price.id ?? '',
+        productName: price.product?.name ?? '',
+        amount: price.unit_amount ? price.unit_amount / 100 : 0,
+        currency: price.currency ?? '',
+        interval: price.recurring?.interval ?? 'unknown',
+        intervalCount: price.recurring?.interval_count ?? 1,
+        // childProfiles: childProfiles, 
+      };
+    });
+
+    res.status(200).json({ plans: formattedPlans });
+  } catch (error) {
+    console.error('Error fetching plans:', error);
+    res.status(500).json({ error: 'Failed to fetch plans' });
   }
 };

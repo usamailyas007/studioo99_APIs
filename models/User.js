@@ -42,8 +42,7 @@ subscriptionPlan: { type: String, default: "Free" },
 subscriptionStatus: { type: String, defaultValue: "inactive"  },
 couponCode: { type: String, default: null },
 stripeCustomerId: {  type: String },
-
-
+refreshTokens: [{ type: String }],   // <--- for refresh token per device
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -38,6 +38,7 @@ router.post('/user/deletVideo', authMiddleware, userController.deleteVideoByUser
 
 
 
+router.get('/subscription/getAllPlans', authMiddleware, userController.getAllPlans);
 
 
 

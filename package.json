@@ -15,6 +15,7 @@
     "mongoose": "^8.0.0",
     "multer": "^2.0.1",
     "nodemailer": "^7.0.4",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "stripe": "^18.3.0"
   }
 }

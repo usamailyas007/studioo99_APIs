@@ -239,6 +239,7 @@ exports.getUserStats = async (req, res) => {
       totalViewers: viewersCount,
       totalContentCreators: creatorsCount
     });
+
   } catch (error) {
     console.error("Error fetching user stats:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
