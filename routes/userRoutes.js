@@ -45,5 +45,7 @@ router.post('/subscription/createSubscription', authMiddleware, userController.c
 
 router.post('/subscription/cancelSubscription', authMiddleware, userController.cancelSubscription);
 
+router.get('/subscription/getCurrentSubscription', authMiddleware, userController.getCurrentSubscription);
+
 
 module.exports = router;

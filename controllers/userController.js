@@ -985,7 +985,7 @@ exports.cancelSubscription = async (req, res) => {
       return res.status(400).json({ status: 'failed', message: 'User ID and device ID are required.' });
     }
 
-    const subscription = await Subscription.findOne({ user: userId })
+    const subscription = await Subscription.findOne({ userId: userId })
       .sort({ createdAt: -1 });
 
     if (!subscription) {
@@ -1023,6 +1023,52 @@ exports.cancelSubscription = async (req, res) => {
     });
   } catch (error) {
     console.error('Error canceling subscription:', error);
+    return res.status(500).json({ status: 'failed', message: error.message });
+  }
+};
+
+exports.getCurrentSubscription = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ status: 'failed', message: 'User ID is required.' });
+    }
+
+    // Find the most recent subscription for the user
+    const subscription = await Subscription.findOne({ userId: userId })
+      .sort({ createdAt: -1 });
+
+    if (!subscription) {
+      return res.status(404).json({ status: 'failed', message: 'No subscription found for this user.' });
+    }
+
+    const stripeSubscription = await stripe.subscriptions.retrieve(
+      subscription.stripeSubscriptionId,
+      { expand: ['items.data.price.product'] }
+    );
+
+    const priceData = stripeSubscription.items.data[0].price;
+    const product = priceData.product;
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        stripeSubscriptionId: subscription.stripeSubscriptionId,
+        priceId: subscription.priceId,
+        planName: product?.name || 'Unknown Plan', 
+        price: {
+          amount: priceData.unit_amount / 100,
+          currency: priceData.currency.toUpperCase(),
+          interval: priceData.recurring.interval,
+        },
+        status: stripeSubscription.status || subscription.status,
+        startDate: subscription.startDate,
+        endDate: subscription.endDate,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching subscription:', error);
     return res.status(500).json({ status: 'failed', message: error.message });
   }
 };
