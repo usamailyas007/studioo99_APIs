@@ -452,8 +452,7 @@ exports.deleteUser = async (req, res) => {
 exports.logout = async (req, res) => {
   try {
 
-    const userId = req.user._id;
-    const { deviceId } = req.body;
+    const { userId , deviceId } = req.body;
 
     if (!deviceId) {
       return res.status(400).json({ status: 'failed', message: 'deviceId is required.' });
