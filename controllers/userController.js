@@ -693,9 +693,9 @@ exports.getAllPlans = async (req, res) => {
       // Determine the plan name based on the interval
       let planName = price.product?.name ?? 'Unknown Plan';
       if (price.recurring?.interval === 'month') {
-        planName = `${planName}`;
+        planName = `${planName} Monthly`;
       } else if (price.recurring?.interval === 'year') {
-        planName = `${planName}`;
+        planName = `${planName} Yearly`;
       }
 
       // Add custom logic for child profiles
@@ -765,6 +765,7 @@ exports.createCustomerAndSetupIntent = async (req, res) => {
     return res.status(500).json({ status: 'failed', message: error.message });
   }
 };
+
 
 
 //Create subscription for customer===============
