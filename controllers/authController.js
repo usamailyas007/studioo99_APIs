@@ -158,7 +158,6 @@ exports.login = async (req, res) => {
       return res.status(403).json({ error: "Maximum device limit reached. Please logout from another device first." });
     }
 
-    // Generate tokens
     const accessToken = jwt.sign(
       { userId: user._id, role: user.role },
       secret_Key,
