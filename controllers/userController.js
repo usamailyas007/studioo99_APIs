@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Subscription = require('../models/subscription');
+const Session = require('../models/sessions');
 const bcrypt = require('bcryptjs');
 const Video = require('../models/Video');
 const MyList = require('../models/myList');
