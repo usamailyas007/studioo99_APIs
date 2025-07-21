@@ -928,7 +928,7 @@ exports.createSubscription = async (req, res) => {
       'price_1RnDcBFzfzQHoUIfNCztDsGP': 1,
       'price_1RnDcXFzfzQHoUIf6FRucAqG': 12,
     };
-    
+
     const startDateObj = new Date(subscription.start_date * 1000);
     const monthsToAdd = priceDurations[priceId] || 1;
     const endDateObj = new Date(startDateObj);
@@ -957,11 +957,17 @@ exports.createSubscription = async (req, res) => {
       }
     );
 
+
+    const updatedUser = await User.findById(userId);
+
     return res.json({
       status: 'success',
-      data: subscription,
+      subscription: subscription,
+      user: updatedUser,
       deviceLimit,
     });
+
+
   } catch (error) {
     console.error('Stripe subscription error:', error);
     return res.status(500).json({ status: 'failed', message: error.message });
