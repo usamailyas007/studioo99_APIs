@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Subscription = require('../models/subscription');
 const bcrypt = require('bcryptjs');
 const Video = require('../models/Video');
 const MyList = require('../models/myList');
@@ -676,6 +677,8 @@ exports.deleteVideoByUserAndId = async (req, res) => {
 
 // =====================Subscription==================
 
+
+// get all plans
 exports.getAllPlans = async (req, res) => {
   try {
     const prices = await stripe.prices.list({
@@ -696,12 +699,14 @@ exports.getAllPlans = async (req, res) => {
       }
 
       // Add custom logic for child profiles
-      // let childProfiles = 0;
-      // if (planName.includes('Platinum')) {
-      //   childProfiles = 6;
-      // } else if (planName.includes('Silver')) {
-      //   childProfiles = 3;
-      // }
+      let deviceLimits = 0;
+      if (planName.includes('Studio Basic')) {
+        deviceLimits = 3;
+      } else if (planName.includes('Studio Select')) {
+        deviceLimits = 5;
+      } else if (planName.includes('Studio Everything')) {
+        deviceLimits = 7;
+      }
 
       // Add the plan to the formatted response
       formattedPlans[planName] = {
@@ -711,7 +716,7 @@ exports.getAllPlans = async (req, res) => {
         currency: price.currency ?? '',
         interval: price.recurring?.interval ?? 'unknown',
         intervalCount: price.recurring?.interval_count ?? 1,
-        // childProfiles: childProfiles, 
+        deviceLimits: deviceLimits, 
       };
     });
 
@@ -721,3 +726,297 @@ exports.getAllPlans = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch plans' });
   }
 };
+
+// create customer and setup intent
+exports.createCustomerAndSetupIntent = async (req, res) => {
+  try {
+    const { name, email, userId, stripeCustomerId } = req.body;
+
+    if (!name || !email || !userId) {
+      return res.status(400).json({ status: 'failed', message: 'Missing required fields.' });
+    }
+
+    // Create a customer in Stripe if no stripeCustomerId exists
+    let customer;
+    if (!stripeCustomerId) {
+      customer = await stripe.customers.create({ name, email });
+      // Save customerId to the database (Mongo)
+      await User.updateOne(
+        { _id: userId },
+        { stripeCustomerId: customer.id }
+      );
+    } else {
+      customer = await stripe.customers.retrieve(stripeCustomerId);
+    }
+
+    // Create a SetupIntent to save a payment method
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customer.id,
+      automatic_payment_methods: { enabled: true },
+    });
+
+    return res.json({
+      status: 'success',
+      data: setupIntent,
+      stripeCustomerId: customer.id,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: 'failed', message: error.message });
+  }
+};
+
+
+//Create subscription for customer===============
+
+// exports.createSubscription = async (req, res) => {
+//   try {
+//     const { userId, priceId, setupIntentId } = req.body;
+
+//     if (!userId || !priceId || !setupIntentId) {
+//       return res.status(400).json({ status: 'failed', message: 'Missing required fields.' });
+//     }
+
+//     // Find user by MongoDB _id, not with 'where'
+//     const user = await User.findById(userId);
+
+//     if (!user || !user.stripeCustomerId) {
+//       return res.status(404).json({ status: 'failed', message: 'User or Stripe customer not found.' });
+//     }
+
+//     const customerId = user.stripeCustomerId;
+
+//     const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+
+//     if (!setupIntent.payment_method) {
+//       return res.status(400).json({ status: 'failed', message: 'No payment method found in SetupIntent.' });
+//     }
+
+//     const paymentMethodId = setupIntent.payment_method;
+
+//     await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+
+//     await stripe.customers.update(customerId, {
+//       invoice_settings: { default_payment_method: paymentMethodId }
+//     });
+
+//     const subscription = await stripe.subscriptions.create({
+//       customer: customerId,
+//       items: [{ price: priceId }],
+//       expand: ['latest_invoice']
+//     });
+
+//     console.log('Subscription Data:', subscription);
+//     console.log(JSON.stringify(subscription.latest_invoice, null, 2));
+
+//     const stripeSubscriptionId = subscription.id;
+//     const status = subscription.status;
+//     const planId = subscription.plan ? subscription.plan.id : null;
+
+//     // Calculate start and end date based on priceId
+//     const priceDurations = {
+//       'price_1RnDZ8FzfzQHoUIf9xCj087m': 1,
+//       'price_1RnDZXFzfzQHoUIfRlY4JmDc': 12,
+//       'price_1RnDa8FzfzQHoUIf19Ijc7in': 1,
+//       'price_1RnDbVFzfzQHoUIfigNFlC1I': 12,
+//       'price_1RnDcBFzfzQHoUIfNCztDsGP': 1,
+//       'price_1RnDcXFzfzQHoUIf6FRucAqG': 12,
+//     };
+
+//     const startDateObj = new Date(subscription.start_date * 1000);
+//     const monthsToAdd = priceDurations[priceId] || 1;
+//     const endDateObj = new Date(startDateObj);
+//     endDateObj.setMonth(endDateObj.getMonth() + monthsToAdd);
+
+//     const startDate = startDateObj.toISOString();
+//     const endDate = endDateObj.toISOString();
+
+//     const productId = subscription.items.data[0].price.product;
+
+//     let deviceLimit = 1;
+//     if (productId === 'prod_SiesaGIzmORykD') {
+//       deviceLimit = 3;
+//     } else if (productId === 'prod_Siet5bc4f0fS4T') {
+//       deviceLimit = 5;
+//     } else if (productId === 'prod_SiewxfafGXPSUc') {
+//       deviceLimit = 7;
+//     } 
+
+//     // Create the subscription record in the database (Mongoose)
+//     await Subscription.create({
+//       stripeSubscriptionId,
+//       status,
+//       planId,
+//       priceId,
+//       startDate,
+//       endDate,
+//       user: userId,   // If your Subscription model expects 'user'
+//     });
+
+//     // Update the User's subscription status and deviceLimit (Mongoose)
+//     await User.updateOne(
+//       { _id: userId },
+//       {
+//         subscriptionStatus: 'active',
+//         totalDevices: 0,
+//         deviceLimit: deviceLimit,
+//       }
+//     );
+
+//     return res.json({
+//       status: 'success',
+//       data: subscription,
+//     });
+//   } catch (error) {
+//     console.error('Stripe subscription error:', error);
+//     return res.status(500).json({ status: 'failed', message: error.message });
+//   }
+// };
+
+exports.createSubscription = async (req, res) => {
+  try {
+    const { userId, priceId, setupIntentId } = req.body;
+
+    if (!userId || !priceId || !setupIntentId) {
+      return res.status(400).json({ status: 'failed', message: 'Missing required fields.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user || !user.stripeCustomerId) {
+      return res.status(404).json({ status: 'failed', message: 'User or Stripe customer not found.' });
+    }
+
+    const customerId = user.stripeCustomerId;
+
+    const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+
+    if (!setupIntent.payment_method) {
+      return res.status(400).json({ status: 'failed', message: 'No payment method found in SetupIntent.' });
+    }
+
+    const paymentMethodId = setupIntent.payment_method;
+
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      expand: ['latest_invoice']
+    });
+
+    // Map productId to device limit
+    const productId = subscription.items.data[0].price.product;
+    let deviceLimit = 1;
+    if (productId === 'prod_SiesaGIzmORykD') {
+      deviceLimit = 3;
+    } else if (productId === 'prod_Siet5bc4f0fS4T') {
+      deviceLimit = 5;
+    } else if (productId === 'prod_SiewxfafGXPSUc') {
+      deviceLimit = 7;
+    }
+
+    // Calculate dates
+    const priceDurations = {
+      'price_1RnDZ8FzfzQHoUIf9xCj087m': 1,
+      'price_1RnDZXFzfzQHoUIfRlY4JmDc': 12,
+      'price_1RnDa8FzfzQHoUIf19Ijc7in': 1,
+      'price_1RnDbVFzfzQHoUIfigNFlC1I': 12,
+      'price_1RnDcBFzfzQHoUIfNCztDsGP': 1,
+      'price_1RnDcXFzfzQHoUIf6FRucAqG': 12,
+    };
+    const startDateObj = new Date(subscription.start_date * 1000);
+    const monthsToAdd = priceDurations[priceId] || 1;
+    const endDateObj = new Date(startDateObj);
+    endDateObj.setMonth(endDateObj.getMonth() + monthsToAdd);
+
+    const startDate = startDateObj.toISOString();
+    const endDate = endDateObj.toISOString();
+
+    // Create the subscription record in the database (Mongoose)
+    await Subscription.create({
+      stripeSubscriptionId: subscription.id,
+      status: subscription.status,
+      planId: subscription.plan ? subscription.plan.id : null,
+      priceId,
+      startDate,
+      endDate,
+      user: userId,
+    });
+
+    // Update the User's subscription status and deviceLimit (Mongoose)
+    await User.updateOne(
+      { _id: userId },
+      {
+        subscriptionStatus: 'active',
+        deviceLimit: deviceLimit,
+      }
+    );
+
+    return res.json({
+      status: 'success',
+      data: subscription,
+      deviceLimit,
+    });
+  } catch (error) {
+    console.error('Stripe subscription error:', error);
+    return res.status(500).json({ status: 'failed', message: error.message });
+  }
+};
+
+exports.cancelSubscription = async (req, res) => {
+  try {
+
+    const { userId } = req.body;
+
+    const deviceId = req.body.deviceId;
+
+    if (!userId || !deviceId) {
+      return res.status(400).json({ status: 'failed', message: 'User ID and device ID are required.' });
+    }
+
+    const subscription = await Subscription.findOne({ user: userId })
+      .sort({ createdAt: -1 });
+
+    if (!subscription) {
+      return res.status(404).json({ status: 'failed', message: 'No active subscription found.' });
+    }
+
+    const canceledSubscription = await stripe.subscriptions.update(
+      subscription.stripeSubscriptionId,
+      {
+        cancel_at_period_end: true,
+      }
+    );
+
+    const cancelDate = new Date(canceledSubscription.cancel_at * 1000);
+
+    subscription.status = 'canceled';
+    subscription.cancelDate = cancelDate.toISOString();
+    await subscription.save();
+
+    await User.updateOne(
+      { _id: userId },
+      {
+        subscriptionStatus: 'inactive',
+        deviceLimit: 1, 
+      }
+    );
+
+    // === Force logout all other devices ===
+    await Session.deleteMany({ user: userId, deviceId: { $ne: deviceId } });
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Subscription will be canceled at the end of the current billing period. Other devices have been logged out.',
+      cancelAt: cancelDate,
+    });
+  } catch (error) {
+    console.error('Error canceling subscription:', error);
+    return res.status(500).json({ status: 'failed', message: error.message });
+  }
+};
+
+

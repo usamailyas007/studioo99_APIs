@@ -37,9 +37,13 @@ router.get('/user/getVideosByUserId', authMiddleware, userController.getVideosBy
 router.post('/user/deletVideo', authMiddleware, userController.deleteVideoByUserAndId);
 
 
-
 router.get('/subscription/getAllPlans', authMiddleware, userController.getAllPlans);
 
+router.post('/subscription/createCustomerAndSetupIntent', authMiddleware, userController.createCustomerAndSetupIntent);
+
+router.post('/subscription/createSubscription', authMiddleware, userController.createSubscription);
+
+router.post('/subscription/cancelSubscription', authMiddleware, userController.cancelSubscription);
 
 
 module.exports = router;
