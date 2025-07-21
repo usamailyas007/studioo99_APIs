@@ -675,7 +675,6 @@ exports.deleteVideoByUserAndId = async (req, res) => {
   }
 };
 
-
 // =====================Subscription==================
 
 
@@ -767,113 +766,8 @@ exports.createCustomerAndSetupIntent = async (req, res) => {
   }
 };
 
-
-
 //Create subscription for customer===============
 
-// exports.createSubscription = async (req, res) => {
-//   try {
-//     const { userId, priceId, setupIntentId } = req.body;
-
-//     if (!userId || !priceId || !setupIntentId) {
-//       return res.status(400).json({ status: 'failed', message: 'Missing required fields.' });
-//     }
-
-//     // Find user by MongoDB _id, not with 'where'
-//     const user = await User.findById(userId);
-
-//     if (!user || !user.stripeCustomerId) {
-//       return res.status(404).json({ status: 'failed', message: 'User or Stripe customer not found.' });
-//     }
-
-//     const customerId = user.stripeCustomerId;
-
-//     const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
-
-//     if (!setupIntent.payment_method) {
-//       return res.status(400).json({ status: 'failed', message: 'No payment method found in SetupIntent.' });
-//     }
-
-//     const paymentMethodId = setupIntent.payment_method;
-
-//     await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
-
-//     await stripe.customers.update(customerId, {
-//       invoice_settings: { default_payment_method: paymentMethodId }
-//     });
-
-//     const subscription = await stripe.subscriptions.create({
-//       customer: customerId,
-//       items: [{ price: priceId }],
-//       expand: ['latest_invoice']
-//     });
-
-//     console.log('Subscription Data:', subscription);
-//     console.log(JSON.stringify(subscription.latest_invoice, null, 2));
-
-//     const stripeSubscriptionId = subscription.id;
-//     const status = subscription.status;
-//     const planId = subscription.plan ? subscription.plan.id : null;
-
-//     // Calculate start and end date based on priceId
-//     const priceDurations = {
-//       'price_1RnDZ8FzfzQHoUIf9xCj087m': 1,
-//       'price_1RnDZXFzfzQHoUIfRlY4JmDc': 12,
-//       'price_1RnDa8FzfzQHoUIf19Ijc7in': 1,
-//       'price_1RnDbVFzfzQHoUIfigNFlC1I': 12,
-//       'price_1RnDcBFzfzQHoUIfNCztDsGP': 1,
-//       'price_1RnDcXFzfzQHoUIf6FRucAqG': 12,
-//     };
-
-//     const startDateObj = new Date(subscription.start_date * 1000);
-//     const monthsToAdd = priceDurations[priceId] || 1;
-//     const endDateObj = new Date(startDateObj);
-//     endDateObj.setMonth(endDateObj.getMonth() + monthsToAdd);
-
-//     const startDate = startDateObj.toISOString();
-//     const endDate = endDateObj.toISOString();
-
-//     const productId = subscription.items.data[0].price.product;
-
-//     let deviceLimit = 1;
-//     if (productId === 'prod_SiesaGIzmORykD') {
-//       deviceLimit = 3;
-//     } else if (productId === 'prod_Siet5bc4f0fS4T') {
-//       deviceLimit = 5;
-//     } else if (productId === 'prod_SiewxfafGXPSUc') {
-//       deviceLimit = 7;
-//     } 
-
-//     // Create the subscription record in the database (Mongoose)
-//     await Subscription.create({
-//       stripeSubscriptionId,
-//       status,
-//       planId,
-//       priceId,
-//       startDate,
-//       endDate,
-//       user: userId,   // If your Subscription model expects 'user'
-//     });
-
-//     // Update the User's subscription status and deviceLimit (Mongoose)
-//     await User.updateOne(
-//       { _id: userId },
-//       {
-//         subscriptionStatus: 'active',
-//         totalDevices: 0,
-//         deviceLimit: deviceLimit,
-//       }
-//     );
-
-//     return res.json({
-//       status: 'success',
-//       data: subscription,
-//     });
-//   } catch (error) {
-//     console.error('Stripe subscription error:', error);
-//     return res.status(500).json({ status: 'failed', message: error.message });
-//   }
-// };
 
 exports.createSubscription = async (req, res) => {
   try {
@@ -1070,6 +964,98 @@ exports.getCurrentSubscription = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching subscription:', error);
+    return res.status(500).json({ status: 'failed', message: error.message });
+  }
+};
+
+//Upgrade Subscription==============================
+exports.upgradeSubscription = async (req, res) => {
+  try {
+    const { userId, stripeSubscriptionId, priceId } = req.body;
+
+    if (!userId || !stripeSubscriptionId || !priceId) {
+      return res.status(400).json({ status: 'failed', message: 'Missing required fields.' });
+    }
+
+    // Find user by MongoDB _id
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 'failed', message: 'User not found.' });
+    }
+
+    // Find subscription record in Mongo
+    const subscriptionRecord = await Subscription.findOne({ userId: userId, stripeSubscriptionId });
+    if (!subscriptionRecord) {
+      return res.status(404).json({ status: 'failed', message: 'Subscription not found.' });
+    }
+
+    // Fetch Stripe subscription
+    const stripeSub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    const subscriptionItemId = stripeSub.items.data[0].id;
+
+    // Update subscription with new price
+    const updatedSubscription = await stripe.subscriptions.update(stripeSubscriptionId, {
+      items: [{
+        id: subscriptionItemId,
+        price: priceId,
+      }],
+      proration_behavior: 'create_prorations',
+      expand: ['latest_invoice'],
+    });
+
+    // Plan durations (months)
+    const priceDurations = {
+      'price_1RnDZ8FzfzQHoUIf9xCj087m': 1,
+      'price_1RnDZXFzfzQHoUIfRlY4JmDc': 12,
+      'price_1RnDa8FzfzQHoUIf19Ijc7in': 1,
+      'price_1RnDbVFzfzQHoUIfigNFlC1I': 12,
+      'price_1RnDcBFzfzQHoUIfNCztDsGP': 1,
+      'price_1RnDcXFzfzQHoUIf6FRucAqG': 12,
+    };
+
+    const startDateObj = new Date(updatedSubscription.start_date * 1000);
+    const monthsToAdd = priceDurations[priceId] || 1;
+    const endDateObj = new Date(startDateObj);
+    endDateObj.setMonth(endDateObj.getMonth() + monthsToAdd);
+
+    const startDate = startDateObj.toISOString();
+    const endDate = endDateObj.toISOString();
+
+    const productId = updatedSubscription.items.data[0].price.product;
+
+    let deviceLimit = 1;
+    if (productId === 'prod_SiesaGIzmORykD') {
+      deviceLimit = 3;
+    } else if (productId === 'prod_Siet5bc4f0fS4T') {
+      deviceLimit = 5;
+    } else if (productId === 'prod_SiewxfafGXPSUc') {
+      deviceLimit = 7;
+    }
+
+    // === Update Mongo: subscription and user info
+    await Subscription.updateOne(
+      { stripeSubscriptionId, user: userId },
+      {
+        priceId,
+        planId: updatedSubscription.plan.id,
+        status: updatedSubscription.status,
+        startDate,
+        endDate,
+      }
+    );
+
+    await User.updateOne(
+      { _id: userId },
+      { deviceLimit }
+    );
+
+    return res.json({
+      status: 'success',
+      message: 'Subscription upgraded successfully.',
+      data: updatedSubscription,
+    });
+  } catch (error) {
+    console.error('Upgrade subscription error:', error);
     return res.status(500).json({ status: 'failed', message: error.message });
   }
 };
