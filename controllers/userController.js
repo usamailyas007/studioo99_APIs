@@ -928,6 +928,7 @@ exports.createSubscription = async (req, res) => {
       'price_1RnDcBFzfzQHoUIfNCztDsGP': 1,
       'price_1RnDcXFzfzQHoUIf6FRucAqG': 12,
     };
+    
     const startDateObj = new Date(subscription.start_date * 1000);
     const monthsToAdd = priceDurations[priceId] || 1;
     const endDateObj = new Date(startDateObj);
@@ -944,7 +945,7 @@ exports.createSubscription = async (req, res) => {
       priceId,
       startDate,
       endDate,
-      user: userId,
+      userId: userId,
     });
 
     // Update the User's subscription status and deviceLimit (Mongoose)
