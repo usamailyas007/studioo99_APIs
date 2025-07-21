@@ -449,6 +449,32 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
+exports.logout = async (req, res) => {
+  try {
+
+    const userId = req.user._id;
+    const { deviceId } = req.body;
+
+    if (!deviceId) {
+      return res.status(400).json({ status: 'failed', message: 'deviceId is required.' });
+    }
+
+    const result = await Session.deleteOne({ user: userId, deviceId });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ status: 'failed', message: 'Session not found or already logged out.' });
+    }
+
+    return res.json({
+      status: 'success',
+      message: 'Logged out from this device successfully.'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return res.status(500).json({ status: 'failed', message: error.message });
+  }
+};
+
 
 //Edit Profile==========================
 // exports.editProfile = [
@@ -484,6 +510,7 @@ exports.deleteUser = async (req, res) => {
 //     }
 //   }
 // ];
+
 exports.editProfile = [
   // Multer middleware for single file upload
   upload.single('profileImage'), 

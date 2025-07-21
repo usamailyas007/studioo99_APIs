@@ -10,6 +10,9 @@ router.post('/signup', authController.signup);
 //Login Route
 router.post('/login', authController.login);
 
+//Logout Route
+router.post('/logout', authController.logout);
+
 //Add Region Route
 router.post('/addRegion', authMiddleware, authController.addRegion);
 
