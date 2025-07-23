@@ -31,7 +31,7 @@ router.get('/user/searchVideo', authMiddleware, userController.searchVideos);
 router.post('/user/incrementView', authMiddleware, userController.incrementViewCount);
 
 //Get Video by ID 
-router.get('/user/getVideosByUserId', authMiddleware, userController.getVideosByUserId);
+router.post('/user/getVideosByUserId', authMiddleware, userController.getVideosByUserId);
 
 //Delete Video Route
 router.post('/user/deletVideo', authMiddleware, userController.deleteVideoByUserAndId);
