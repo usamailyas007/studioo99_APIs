@@ -22,6 +22,8 @@ router.get('/user/getContentCreator', authMiddleware, adminController.getAllCont
 //Get All Viewers Route
 router.get('/user/getViewers', authMiddleware, adminController.getAllViewers);
 
+router.get('/user/getUserStats', authMiddleware, adminController.getUserStats);
+
 //Update Verifciation Status Route
 router.post('/user/updateVerificationStatus', authMiddleware, adminController.updateVerificationStatus);
 
@@ -29,7 +31,7 @@ router.post('/user/updateVerificationStatus', authMiddleware, adminController.up
 router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 
 //Update Video Status Route
-router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
+// router.post('/user/suspendUser', authMiddleware,  adminController.suspendUser);
 
 //Get All Viewers Route
 router.post('/admin/updateVieoStatus', authMiddleware, adminController.updateVideoApprovalStatus);
