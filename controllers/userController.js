@@ -806,22 +806,22 @@ exports.createSubscription = async (req, res) => {
     // Map productId to device limit
     const productId = subscription.items.data[0].price.product;
     let deviceLimit = 1;
-    if (productId === 'prod_SiesaGIzmORykD') {
+    if (productId === 'prod_SkCbZCGBKP1UNS') {
       deviceLimit = 3;
-    } else if (productId === 'prod_Siet5bc4f0fS4T') {
+    } else if (productId === 'prod_SkCfvblCinEkSr') {
       deviceLimit = 5;
-    } else if (productId === 'prod_SiewxfafGXPSUc') {
+    } else if (productId === 'prod_SkCgGA7bRjjDuH') {
       deviceLimit = 7;
     }
 
     // Calculate dates
     const priceDurations = {
-      'price_1RnDZ8FzfzQHoUIf9xCj087m': 1,
-      'price_1RnDZXFzfzQHoUIfRlY4JmDc': 12,
-      'price_1RnDa8FzfzQHoUIf19Ijc7in': 1,
-      'price_1RnDbVFzfzQHoUIfigNFlC1I': 12,
-      'price_1RnDcBFzfzQHoUIfNCztDsGP': 1,
-      'price_1RnDcXFzfzQHoUIf6FRucAqG': 12,
+      'price_1RoiCUFzfzQHoUIfIEfB0bkh': 1,
+      'price_1RoiCuFzfzQHoUIfz44nhiOK': 12,
+      'price_1RoiFpFzfzQHoUIfpNAH6CdW': 1,
+      'price_1RoiGIFzfzQHoUIfSzQvLeDL': 12,
+      'price_1RoiGlFzfzQHoUIfzEfN1iCz': 1,
+      'price_1RoiH4FzfzQHoUIfOMdSNXlD': 12,
     };
 
     const startDateObj = new Date(subscription.start_date * 1000);
@@ -1005,12 +1005,12 @@ exports.upgradeSubscription = async (req, res) => {
 
     // Plan durations (months)
     const priceDurations = {
-      'price_1RnDZ8FzfzQHoUIf9xCj087m': 1,
-      'price_1RnDZXFzfzQHoUIfRlY4JmDc': 12,
-      'price_1RnDa8FzfzQHoUIf19Ijc7in': 1,
-      'price_1RnDbVFzfzQHoUIfigNFlC1I': 12,
-      'price_1RnDcBFzfzQHoUIfNCztDsGP': 1,
-      'price_1RnDcXFzfzQHoUIf6FRucAqG': 12,
+      'price_1RoiCUFzfzQHoUIfIEfB0bkh': 1,
+      'price_1RoiCuFzfzQHoUIfz44nhiOK': 12,
+      'price_1RoiFpFzfzQHoUIfpNAH6CdW': 1,
+      'price_1RoiGIFzfzQHoUIfSzQvLeDL': 12,
+      'price_1RoiGlFzfzQHoUIfzEfN1iCz': 1,
+      'price_1RoiH4FzfzQHoUIfOMdSNXlD': 12,
     };
 
     const startDateObj = new Date(updatedSubscription.start_date * 1000);
@@ -1024,11 +1024,11 @@ exports.upgradeSubscription = async (req, res) => {
     const productId = updatedSubscription.items.data[0].price.product;
 
     let deviceLimit = 1;
-    if (productId === 'prod_SiesaGIzmORykD') {
+    if (productId === 'prod_SkCbZCGBKP1UNS') {
       deviceLimit = 3;
-    } else if (productId === 'prod_Siet5bc4f0fS4T') {
+    } else if (productId === 'prod_SkCfvblCinEkSr') {
       deviceLimit = 5;
-    } else if (productId === 'prod_SiewxfafGXPSUc') {
+    } else if (productId === 'prod_SkCgGA7bRjjDuH') {
       deviceLimit = 7;
     }
 
