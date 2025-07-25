@@ -9,6 +9,8 @@ const subscriptionSchema = new mongoose.Schema({
   endDate: { type: Date },
   cancelDate: { type: Date },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
+    amount: { type: Number, default: 0 },         
+  currency: { type: String, default: 'USD' },  
 }, { timestamps: true }); 
 
 module.exports = mongoose.model('Subscription', subscriptionSchema);

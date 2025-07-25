@@ -223,7 +223,6 @@ exports.removeFromMyList = async (req, res) => {
 };
 
 //Get All List 
-
 // exports.getMyList = async (req, res) => {
 //   try {
 //     const { userId } = req.body;
@@ -231,47 +230,62 @@ exports.removeFromMyList = async (req, res) => {
 //     const limit = 10;
 //     const skip = (page - 1) * limit;
 
-//     // Fetch paginated MyList entries for this user
-//     const [myListEntries, total] = await Promise.all([
-//       MyList.find({ user: userId })
-//         .skip(skip)
-//         .limit(limit)
-//         .sort({ createdAt: -1 })
-//         .populate('video'),
-//       MyList.countDocuments({ user: userId })
-//     ]);
+//     const pipeline = [
+//       { $match: { user: new mongoose.Types.ObjectId(userId) } },
+//       { $sort: { createdAt: -1 } },
+//       {
+//         $lookup: {
+//           from: 'videos',
+//           localField: 'video',
+//           foreignField: '_id',
+//           as: 'video'
+//         }
+//       },
+//       { $unwind: '$video' },
+    
+//       {
+//   $project: {
+//     id: "$_id",
+//     videoId: "$video._id",
+//     userId: "$user",
+//     createdAt: 1,
+//     updatedAt: 1,
+//     Video: {
+//       $mergeObjects: [
+//         {
+//           myList: [{
+//             id: "$_id",
+//             videoId: "$video._id",
+//             userId: "$user",
+//             createdAt: "$createdAt",
+//             updatedAt: "$updatedAt"
+//           }]
+//         },
+//         "$video"
+//       ]
+//     }
+//   }
+// },
+//       { $skip: skip },
+//       { $limit: limit }
+//     ];
 
-//     const data = myListEntries.map(entry => {
-//       const ListEntry = {
-//         id: entry._id,
-//         videoId: entry.video._id,
-//         userId: entry.user,
-//         createdAt: entry.createdAt,
-//         updatedAt: entry.updatedAt,
-//       };
+    
+//     const data = await MyList.aggregate(pipeline);
 
-//       const videoData = {
-//         ...entry.video.toObject(),
-//         id: entry.video._id,
-//         myList: [ListEntry]
-//       };
-
-//       return {
-//         ...ListEntry,
-//         Video: videoData
-//       };
-//     });
+   
+//     const total = await MyList.countDocuments({ user: userId });
 
 //     return res.json({
-//       message: "My List videos fetched successfully",
+//       message: 'My List videos fetched successfully',
 //       data,
 //       currentPage: page,
 //       totalPages: Math.ceil(total / limit),
 //       totalMyList: total
 //     });
 //   } catch (error) {
-//     console.error("Error fetching my list:", error);
-//     res.status(500).json({ message: "Server error", error: error.message });
+//     console.error('Error fetching my list:', error);
+//     res.status(500).json({ message: 'Server error', error: error.message });
 //   }
 // };
 exports.getMyList = async (req, res) => {
@@ -293,38 +307,63 @@ exports.getMyList = async (req, res) => {
         }
       },
       { $unwind: '$video' },
-    
       {
-  $project: {
-    id: "$_id",
-    videoId: "$video._id",
-    userId: "$user",
-    createdAt: 1,
-    updatedAt: 1,
-    Video: {
-      $mergeObjects: [
-        {
-          myList: [{
-            id: "$_id",
-            videoId: "$video._id",
-            userId: "$user",
-            createdAt: "$createdAt",
-            updatedAt: "$updatedAt"
-          }]
-        },
-        "$video"
-      ]
-    }
-  }
-},
+        $lookup: {
+          from: 'users',
+          localField: 'video.user',
+          foreignField: '_id',
+          as: 'uploader'
+        }
+      },
+      { $unwind: { path: '$uploader', preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          id: "$_id",
+          videoId: "$video._id",
+          userId: "$user",
+          uploaderProfile: {
+            name: "$uploader.name",
+            channelName: "$uploader.channelName",
+            profileImage: {
+              $cond: {
+                if: { $ifNull: ["$uploader.profileImage", false] },
+                then: {
+                  $concat: [
+                    "https://studio99.blob.core.windows.net/",
+                    "$uploader.profileImage"
+                  ]
+                },
+                else: null
+              }
+            }
+          },
+          Video: {
+            $mergeObjects: [
+              {
+                myList: [{
+                  id: "$_id",
+                  videoId: "$video._id",
+                  userId: "$user",
+                  createdAt: "$createdAt",
+                  updatedAt: "$updatedAt"
+                }]
+              },
+              "$video"
+            ]
+          }
+        }
+      },
+      {
+        $project: {
+          uploader: 0,
+          video: 0
+        }
+      },
       { $skip: skip },
       { $limit: limit }
     ];
 
-    
     const data = await MyList.aggregate(pipeline);
-
-   
     const total = await MyList.countDocuments({ user: userId });
 
     return res.json({
@@ -339,6 +378,7 @@ exports.getMyList = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 //Get All Videos===========================
 exports.getAllVideos = async (req, res) => {
@@ -678,7 +718,7 @@ exports.deleteVideoByUserAndId = async (req, res) => {
 // =====================Subscription==================
 
 
-// get all plans
+// get all plans===========================
 exports.getAllPlans = async (req, res) => {
   try {
     const prices = await stripe.prices.list({
@@ -727,7 +767,7 @@ exports.getAllPlans = async (req, res) => {
   }
 };
 
-// create customer and setup intent
+// create customer and setup intent========================
 exports.createCustomerAndSetupIntent = async (req, res) => {
   try {
     const { name, email, userId, stripeCustomerId } = req.body;
@@ -767,8 +807,105 @@ exports.createCustomerAndSetupIntent = async (req, res) => {
 };
 
 //Create subscription for customer===============
+// exports.createSubscription = async (req, res) => {
+//   try {
+//     const { userId, priceId, setupIntentId } = req.body;
+
+//     if (!userId || !priceId || !setupIntentId) {
+//       return res.status(400).json({ status: 'failed', message: 'Missing required fields.' });
+//     }
+
+//     const user = await User.findById(userId);
+//     if (!user || !user.stripeCustomerId) {
+//       return res.status(404).json({ status: 'failed', message: 'User or Stripe customer not found.' });
+//     }
+
+//     const customerId = user.stripeCustomerId;
+
+//     const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+
+//     if (!setupIntent.payment_method) {
+//       return res.status(400).json({ status: 'failed', message: 'No payment method found in SetupIntent.' });
+//     }
+
+//     const paymentMethodId = setupIntent.payment_method;
+
+//     await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+//     await stripe.customers.update(customerId, {
+//       invoice_settings: { default_payment_method: paymentMethodId }
+//     });
+
+//     const subscription = await stripe.subscriptions.create({
+//       customer: customerId,
+//       items: [{ price: priceId }],
+//       expand: ['latest_invoice']
+//     });
+
+//     // Map productId to device limit
+//     const productId = subscription.items.data[0].price.product;
+//     let deviceLimit = 1;
+//     if (productId === 'prod_SkCbZCGBKP1UNS') {
+//       deviceLimit = 3;
+//     } else if (productId === 'prod_SkCfvblCinEkSr') {
+//       deviceLimit = 5;
+//     } else if (productId === 'prod_SkCgGA7bRjjDuH') {
+//       deviceLimit = 7;
+//     }
+
+//     // Calculate dates
+//     const priceDurations = {
+//       'price_1RoiCUFzfzQHoUIfIEfB0bkh': 1,
+//       'price_1RoiCuFzfzQHoUIfz44nhiOK': 12,
+//       'price_1RoiFpFzfzQHoUIfpNAH6CdW': 1,
+//       'price_1RoiGIFzfzQHoUIfSzQvLeDL': 12,
+//       'price_1RoiGlFzfzQHoUIfzEfN1iCz': 1,
+//       'price_1RoiH4FzfzQHoUIfOMdSNXlD': 12,
+//     };
+
+//     const startDateObj = new Date(subscription.start_date * 1000);
+//     const monthsToAdd = priceDurations[priceId] || 1;
+//     const endDateObj = new Date(startDateObj);
+//     endDateObj.setMonth(endDateObj.getMonth() + monthsToAdd);
+
+//     const startDate = startDateObj.toISOString();
+//     const endDate = endDateObj.toISOString();
+
+//     // Create the subscription record in the database (Mongoose)
+//     await Subscription.create({
+//       stripeSubscriptionId: subscription.id,
+//       status: subscription.status,
+//       planId: subscription.plan ? subscription.plan.id : null,
+//       priceId,
+//       startDate,
+//       endDate,
+//       userId: userId,
+//     });
+
+//     // Update the User's subscription status and deviceLimit (Mongoose)
+//     await User.updateOne(
+//       { _id: userId },
+//       {
+//         subscriptionStatus: 'active',
+//         deviceLimit: deviceLimit,
+//       }
+//     );
 
 
+//     const updatedUser = await User.findById(userId);
+
+//     return res.json({
+//       status: 'success',
+//       subscription: subscription,
+//       user: updatedUser,
+//       deviceLimit,
+//     });
+
+
+//   } catch (error) {
+//     console.error('Stripe subscription error:', error);
+//     return res.status(500).json({ status: 'failed', message: error.message });
+//   }
+// };
 exports.createSubscription = async (req, res) => {
   try {
     const { userId, priceId, setupIntentId } = req.body;
@@ -783,15 +920,12 @@ exports.createSubscription = async (req, res) => {
     }
 
     const customerId = user.stripeCustomerId;
-
     const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
-
     if (!setupIntent.payment_method) {
       return res.status(400).json({ status: 'failed', message: 'No payment method found in SetupIntent.' });
     }
 
     const paymentMethodId = setupIntent.payment_method;
-
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
     await stripe.customers.update(customerId, {
       invoice_settings: { default_payment_method: paymentMethodId }
@@ -832,6 +966,15 @@ exports.createSubscription = async (req, res) => {
     const startDate = startDateObj.toISOString();
     const endDate = endDateObj.toISOString();
 
+    // --- REVENUE LOGIC ---
+    let amount = 0;
+    let currency = 'USD';
+    const invoice = subscription.latest_invoice;
+    if (invoice && invoice.amount_paid) {
+      amount = invoice.amount_paid / 100;
+      currency = invoice.currency ? invoice.currency.toUpperCase() : 'USD';
+    }
+
     // Create the subscription record in the database (Mongoose)
     await Subscription.create({
       stripeSubscriptionId: subscription.id,
@@ -841,6 +984,8 @@ exports.createSubscription = async (req, res) => {
       startDate,
       endDate,
       userId: userId,
+      amount,
+      currency,
     });
 
     // Update the User's subscription status and deviceLimit (Mongoose)
@@ -852,16 +997,15 @@ exports.createSubscription = async (req, res) => {
       }
     );
 
-
     const updatedUser = await User.findById(userId);
 
     return res.json({
       status: 'success',
-      subscription: subscription,
+      subscription,
       user: updatedUser,
       deviceLimit,
+      revenue: { amount, currency }
     });
-
 
   } catch (error) {
     console.error('Stripe subscription error:', error);
@@ -869,6 +1013,8 @@ exports.createSubscription = async (req, res) => {
   }
 };
 
+
+//Cancel subscription for customer================
 exports.cancelSubscription = async (req, res) => {
   try {
 
@@ -922,6 +1068,7 @@ exports.cancelSubscription = async (req, res) => {
   }
 };
 
+//Get Current subscription===========================
 exports.getCurrentSubscription = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -977,14 +1124,14 @@ exports.upgradeSubscription = async (req, res) => {
       return res.status(400).json({ status: 'failed', message: 'Missing required fields.' });
     }
 
-    // Find user by MongoDB _id
+    // Find user
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ status: 'failed', message: 'User not found.' });
     }
 
     // Find subscription record in Mongo
-    const subscriptionRecord = await Subscription.findOne({ userId: userId, stripeSubscriptionId });
+    const subscriptionRecord = await Subscription.findOne({ userId, stripeSubscriptionId });
     if (!subscriptionRecord) {
       return res.status(404).json({ status: 'failed', message: 'Subscription not found.' });
     }
@@ -993,7 +1140,7 @@ exports.upgradeSubscription = async (req, res) => {
     const stripeSub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
     const subscriptionItemId = stripeSub.items.data[0].id;
 
-    // Update subscription with new price
+    // === Update subscription with new price (Stripe)
     const updatedSubscription = await stripe.subscriptions.update(stripeSubscriptionId, {
       items: [{
         id: subscriptionItemId,
@@ -1003,7 +1150,7 @@ exports.upgradeSubscription = async (req, res) => {
       expand: ['latest_invoice'],
     });
 
-    // Plan durations (months)
+    // Plan durations (months) and device limit logic
     const priceDurations = {
       'price_1RoiCUFzfzQHoUIfIEfB0bkh': 1,
       'price_1RoiCuFzfzQHoUIfz44nhiOK': 12,
@@ -1021,8 +1168,8 @@ exports.upgradeSubscription = async (req, res) => {
     const startDate = startDateObj.toISOString();
     const endDate = endDateObj.toISOString();
 
+    // Device limit by product
     const productId = updatedSubscription.items.data[0].price.product;
-
     let deviceLimit = 1;
     if (productId === 'prod_SkCbZCGBKP1UNS') {
       deviceLimit = 3;
@@ -1032,15 +1179,26 @@ exports.upgradeSubscription = async (req, res) => {
       deviceLimit = 7;
     }
 
+    // Revenue logic
+    let amount = 0;
+    let currency = 'USD';
+    const invoice = updatedSubscription.latest_invoice;
+    if (invoice && invoice.amount_paid) {
+      amount = invoice.amount_paid / 100;
+      currency = invoice.currency ? invoice.currency.toUpperCase() : 'USD';
+    }
+
     // === Update Mongo: subscription and user info
     await Subscription.updateOne(
-      { stripeSubscriptionId, user: userId },
+      { stripeSubscriptionId, userId },
       {
         priceId,
         planId: updatedSubscription.plan.id,
         status: updatedSubscription.status,
         startDate,
         endDate,
+        amount,
+        currency,
       }
     );
 
@@ -1053,11 +1211,103 @@ exports.upgradeSubscription = async (req, res) => {
       status: 'success',
       message: 'Subscription upgraded successfully.',
       data: updatedSubscription,
+      deviceLimit,
+      revenue: { amount, currency }
     });
   } catch (error) {
     console.error('Upgrade subscription error:', error);
     return res.status(500).json({ status: 'failed', message: error.message });
   }
 };
+// exports.upgradeSubscription = async (req, res) => {
+//   try {
+//     const { userId, stripeSubscriptionId, priceId } = req.body;
+
+//     if (!userId || !stripeSubscriptionId || !priceId) {
+//       return res.status(400).json({ status: 'failed', message: 'Missing required fields.' });
+//     }
+
+//     // Find user by MongoDB _id
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ status: 'failed', message: 'User not found.' });
+//     }
+
+//     // Find subscription record in Mongo
+//     const subscriptionRecord = await Subscription.findOne({ userId: userId, stripeSubscriptionId });
+//     if (!subscriptionRecord) {
+//       return res.status(404).json({ status: 'failed', message: 'Subscription not found.' });
+//     }
+
+//     // Fetch Stripe subscription
+//     const stripeSub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+//     const subscriptionItemId = stripeSub.items.data[0].id;
+
+//     // Update subscription with new price
+//     const updatedSubscription = await stripe.subscriptions.update(stripeSubscriptionId, {
+//       items: [{
+//         id: subscriptionItemId,
+//         price: priceId,
+//       }],
+//       proration_behavior: 'create_prorations',
+//       expand: ['latest_invoice'],
+//     });
+
+//     // Plan durations (months)
+//     const priceDurations = {
+//       'price_1RoiCUFzfzQHoUIfIEfB0bkh': 1,
+//       'price_1RoiCuFzfzQHoUIfz44nhiOK': 12,
+//       'price_1RoiFpFzfzQHoUIfpNAH6CdW': 1,
+//       'price_1RoiGIFzfzQHoUIfSzQvLeDL': 12,
+//       'price_1RoiGlFzfzQHoUIfzEfN1iCz': 1,
+//       'price_1RoiH4FzfzQHoUIfOMdSNXlD': 12,
+//     };
+
+//     const startDateObj = new Date(updatedSubscription.start_date * 1000);
+//     const monthsToAdd = priceDurations[priceId] || 1;
+//     const endDateObj = new Date(startDateObj);
+//     endDateObj.setMonth(endDateObj.getMonth() + monthsToAdd);
+
+//     const startDate = startDateObj.toISOString();
+//     const endDate = endDateObj.toISOString();
+
+//     const productId = updatedSubscription.items.data[0].price.product;
+
+//     let deviceLimit = 1;
+//     if (productId === 'prod_SkCbZCGBKP1UNS') {
+//       deviceLimit = 3;
+//     } else if (productId === 'prod_SkCfvblCinEkSr') {
+//       deviceLimit = 5;
+//     } else if (productId === 'prod_SkCgGA7bRjjDuH') {
+//       deviceLimit = 7;
+//     }
+
+//     // === Update Mongo: subscription and user info
+//     await Subscription.updateOne(
+//       { stripeSubscriptionId, user: userId },
+//       {
+//         priceId,
+//         planId: updatedSubscription.plan.id,
+//         status: updatedSubscription.status,
+//         startDate,
+//         endDate,
+//       }
+//     );
+
+//     await User.updateOne(
+//       { _id: userId },
+//       { deviceLimit }
+//     );
+
+//     return res.json({
+//       status: 'success',
+//       message: 'Subscription upgraded successfully.',
+//       data: updatedSubscription,
+//     });
+//   } catch (error) {
+//     console.error('Upgrade subscription error:', error);
+//     return res.status(500).json({ status: 'failed', message: error.message });
+//   }
+// };
 
 

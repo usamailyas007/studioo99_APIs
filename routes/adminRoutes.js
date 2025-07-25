@@ -4,6 +4,10 @@ const adminController = require('../controllers/adminController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 
+//Admin login Route
+
+router.post('/admin/adminLogin', adminController.adminLogin);
+
 //Post Policy Route
 router.post('/admin/policy', authMiddleware, adminController.upsertPolicy);
 

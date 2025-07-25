@@ -136,63 +136,7 @@ exports.signup = async (req, res) => {
 //   }
 // };
 
-// exports.login = async (req, res) => {
-//   try {
-//     const { email, password, deviceId } = req.body;
 
-//     if (!email || !password || !deviceId) {
-//       return res.status(400).json({ error: "Please provide email, password, and deviceId" });
-//     }
-
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(400).json({ error: "Invalid email or password" });
-//     if (user.suspended) return res.status(403).json({ error: "This account has been suspended." });
-//     if (user.activeStatus === false) return res.status(403).json({ error: "This account has been deleted." });
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) return res.status(400).json({ error: "Invalid email or password" });
-
-//     // Enforce device/session limit
-//     const activeSessions = await Session.countDocuments({ user: user._id });
-//     if (activeSessions >= 3) {
-//       return res.status(403).json({ error: "Maximum device limit reached. Please logout from another device first." });
-//     }
-
-//     const accessToken = jwt.sign(
-//       { userId: user._id, role: user.role },
-//       secret_Key,
-//       { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
-//     );
-//     const refreshToken = jwt.sign(
-//       { userId: user._id, role: user.role, deviceId },
-//       refresh_Secret_Key,
-//       { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
-//     );
-
-//     // Store refresh token and device session
-//     user.refreshTokens = user.refreshTokens || [];
-//     user.refreshTokens.push(refreshToken);
-//     await user.save();
-
-//     await Session.create({
-//       user: user._id,
-//       deviceId,
-//       refreshToken,
-//       createdAt: new Date(),
-//       lastActiveAt: new Date()
-//     });
-
-//     res.status(200).json({
-//       message: "Login successful",
-//       accessToken,
-//       refreshToken,
-//       user: { ...user._doc, password: undefined, refreshTokens: undefined }
-//     });
-//   } catch (error) {
-//     console.error('Login error:', error);
-//     res.status(500).json({ error: 'Server error', details: error.message });
-//   }
-// };
 exports.login = async (req, res) => {
   try {
     const { email, password, deviceId } = req.body;

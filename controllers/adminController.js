@@ -2,14 +2,62 @@ const Policy = require('../models/policy');
 const AppSettings = require('../models/AppSettings');
 const User = require('../models/User');
 const Video = require('../models/Video');
+const Subscription = require('../models/subscription')
 const Coupon = require('../models/Coupon');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() }); 
 const uploadToAzure = require('../utils/azureBlob'); 
 const getBlobSasUrl = require('../utils/getBlobSasUrl');
+const bcrypt = require('bcryptjs');
+const secret_Key = process.env.SECRET_KEY;
+const jwt = require('jsonwebtoken');
 
 
 
+//Admin login============================
+exports.adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Please provide both email and password" });
+    }
+
+    // Only find users with the Admin role
+    const user = await User.findOne({ email, role: 'Admin' });
+    if (!user) {
+      return res.status(400).json({ error: "Invalid email, password, or not an admin" });
+    }
+
+    if (user.suspended === true) {
+      return res.status(403).json({ error: "This admin account has been suspended." });
+    }
+
+    if (user.activeStatus === false) {
+      return res.status(403).json({ error: "This admin account has been deleted." });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      secret_Key,
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      message: "Admin login successful",
+      token,
+      user: { ...user._doc, password: undefined }
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
 
 //post Privacy SSL Term======================
 exports.upsertPolicy = async (req, res) => {
@@ -229,15 +277,21 @@ exports.suspendUser = async (req, res) => {
 //Get User Stats================================
 exports.getUserStats = async (req, res) => {
   try {
-    const [viewersCount, creatorsCount] = await Promise.all([
+    const [viewersCount, creatorsCount, revenueAgg] = await Promise.all([
       User.countDocuments({ role: 'Viewer' }),
       User.countDocuments({ role: 'Content Creator' }),
+      Subscription.aggregate([
+        { $group: { _id: null, totalRevenue: { $sum: "$amount" } } }
+      ])
     ]);
+
+    const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].totalRevenue : 0;
 
     res.json({
       message: "User role stats fetched successfully",
       totalViewers: viewersCount,
-      totalContentCreators: creatorsCount
+      totalContentCreators: creatorsCount,
+      totalRevenue
     });
 
   } catch (error) {
@@ -245,6 +299,7 @@ exports.getUserStats = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 //Update Video status ==================================
 exports.updateVideoApprovalStatus = async (req, res) => {
