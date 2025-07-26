@@ -147,6 +147,7 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ error: "Invalid email or password" });
+    if (user.verificationStatus === "Pending") return res.status(403).json({ error: "Your account is currently under review by the Studio99 team" });
     if (user.suspended) return res.status(403).json({ error: "This account has been suspended." });
     if (user.activeStatus === false) return res.status(403).json({ error: "This account has been deleted." });
 
@@ -455,7 +456,6 @@ exports.logout = async (req, res) => {
 // ];
 
 exports.editProfile = [
-  // Multer middleware for single file upload
   upload.single('profileImage'), 
   async (req, res) => {
     try {

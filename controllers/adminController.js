@@ -186,10 +186,21 @@ exports.getAllContentCreators = async (req, res) => {
       User.countDocuments({ role: 'Content Creator' })
     ]);
 
+    const storageAccount = "studio99";
+
+    const creatorsWithProfileUrl = contentCreators.map(user => {
+      const userObj = { ...user._doc };
+      userObj.profileImageUrl = user.profileImage
+        ? `https://${storageAccount}.blob.core.windows.net/${user.profileImage}`
+        : null;
+      delete userObj.refreshTokens; // Remove sensitive field
+      return userObj;
+    });
+
     const totalPages = Math.ceil(total / limit);
 
     res.json({
-      contentCreators,
+      contentCreators: creatorsWithProfileUrl,
       pagination: {
         total,
         page,
@@ -215,10 +226,21 @@ exports.getAllViewers = async (req, res) => {
       User.countDocuments({ role: 'Viewer' })
     ]);
 
+    const storageAccount = "studio99";
+
+    const viewersWithProfileUrl = viewers.map(user => {
+      const userObj = { ...user._doc };
+      userObj.profileImageUrl = user.profileImage
+        ? `https://${storageAccount}.blob.core.windows.net/${user.profileImage}`
+        : null;
+      delete userObj.refreshTokens; // <-- do not send this
+      return userObj;
+    });
+
     const totalPages = Math.ceil(total / limit);
 
     res.json({
-      viewers,
+      viewers: viewersWithProfileUrl,
       pagination: {
         total,
         page,
@@ -231,6 +253,7 @@ exports.getAllViewers = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
 
 //Update Verification Status====================
 exports.updateVerificationStatus = async (req, res) => {

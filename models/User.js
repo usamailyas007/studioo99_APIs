@@ -44,7 +44,8 @@ couponCode: { type: String, default: null },
 stripeCustomerId: {  type: String },
 deviceLimit: { type: Number, default: 1 },
 totalDevices: { type: Number, default: 1 },
-refreshTokens: [{ type: String }],   // <--- for refresh token per device
+refreshTokens: [{ type: String }],   
 });
+
 
 module.exports = mongoose.model('User', userSchema);
