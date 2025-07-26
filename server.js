@@ -4,6 +4,9 @@ const connectDB = require('./config/db');
 const appRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const stripeWebhookRoutes = require('./routes/stripeWebhook');
+
+
 
 
 require('dotenv').config();
@@ -20,6 +23,15 @@ connectDB();
 app.use('/auth/api', authRoutes);
 app.use('/api', appRoutes);
 app.use('/api', adminRoutes);
+
+
+
+
+//Webhook and corn Job
+app.use('/', stripeWebhookRoutes);
+
+// Start Cron Job
+require('./jobs/subscriptionExpiryJob'); 
 
 
 app.get('/', (req, res) => {
