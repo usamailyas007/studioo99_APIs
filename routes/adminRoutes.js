@@ -48,6 +48,9 @@ router.get('/admin/coupons', authMiddleware, adminController.getCoupons);
 
 router.post('/admin/getVidByUserId', authMiddleware, adminController.getVidByUserId);
 
+//Get Revenue Stats Route
+router.get('/admin/getRevenueStats',  adminController.getRevenueStats);
+
 
 
 

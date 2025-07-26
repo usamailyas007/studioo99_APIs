@@ -412,3 +412,70 @@ exports.getVidByUserId = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
+//Track revenue===============================
+exports.getRevenueStats = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1); // Jan 1 of this year
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); // 1st of this month
+
+    // 1. Monthly: Revenue per day in current month
+    const monthlyData = await Subscription.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startOfMonth }
+        }
+      },
+      {
+        $group: {
+          _id: { day: { $dayOfMonth: "$createdAt" } },
+          total: { $sum: "$amount" }
+        }
+      },
+      { $sort: { "_id.day": 1 } }
+    ]);
+
+    // Fill in days with 0 if no revenue
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const monthly = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const found = monthlyData.find(item => item._id.day === d);
+      monthly.push({ day: d, amount: found ? found.total : 0 });
+    }
+
+    // 2. Yearly: Revenue per month in current year
+    const yearlyData = await Subscription.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startOfYear }
+        }
+      },
+      {
+        $group: {
+          _id: { month: { $month: "$createdAt" } },
+          total: { $sum: "$amount" }
+        }
+      },
+      { $sort: { "_id.month": 1 } }
+    ]);
+
+    // Month names for Jan-Dec
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const yearly = [];
+    for (let m = 1; m <= 12; m++) {
+      const found = yearlyData.find(item => item._id.month === m);
+      yearly.push({ month: months[m - 1], amount: found ? found.total : 0 });
+    }
+
+    res.json({
+      message: "Revenue stats fetched",
+      monthly, // [{day: 1, amount: 0}, ...]
+      yearly   // [{month: 'Jan', amount: 0}, ...]
+    });
+
+  } catch (error) {
+    console.error("Error fetching revenue stats:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
