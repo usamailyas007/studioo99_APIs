@@ -11,6 +11,7 @@ const getBlobSasUrl = require('../utils/getBlobSasUrl');
 const bcrypt = require('bcryptjs');
 const secret_Key = process.env.SECRET_KEY;
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 
 
 
@@ -373,6 +374,41 @@ exports.getCoupons = async (req, res) => {
       }
     });
   } catch (error) {
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
+
+//
+exports.getVidByUserId = async (req, res) => {
+  try {
+    const { userId } = req.body; 
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const [videos, total] = await Promise.all([
+      Video.find({ user: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Video.countDocuments({ user: userId })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      message: "Videos fetched successfully",
+      data: videos,      
+      currentPage: page,
+      totalPages,
+      totalVideos: total
+    });
+  } catch (error) {
+    console.error('Error fetching videos by user:', error);
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };

@@ -46,6 +46,9 @@ router.post('/admin/createCoupon', authMiddleware, adminController.createCoupon)
 //Get all coupons
 router.get('/admin/coupons', authMiddleware, adminController.getCoupons);
 
+router.post('/admin/getVidByUserId', authMiddleware, adminController.getVidByUserId);
+
+
 
 
 
